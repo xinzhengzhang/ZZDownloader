@@ -7,7 +7,7 @@
 //
 
 #import "ViewController.h"
-
+#import "ZZDownloader.h"
 @interface ViewController ()
 
 @end
@@ -16,6 +16,7 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    [ZZDownloader abc];
     // Do any additional setup after loading the view, typically from a nib.
 }
 

@@ -8,6 +8,8 @@ Pod::Spec.new do |s|
   s.ios.deployment_target = '6.0'
   s.requires_arc   = true
   s.source_files   = 'ZZDownloader/*.{h,m}'
+  s.public_header_files = 'ZZDownloader/*.h'
+  
   s.license      = { :type => 'Apache License, Version 2.0', :text => <<-LICENSE
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.

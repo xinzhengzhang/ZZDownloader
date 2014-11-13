@@ -8,8 +8,8 @@
 
 #import <Foundation/Foundation.h>
 
-int fuckA;
-
 @interface ZZDownloader : NSObject
 
++ (void)abc;
++ (void)x;
 @end

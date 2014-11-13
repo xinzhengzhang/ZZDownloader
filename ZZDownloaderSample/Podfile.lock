@@ -22,21 +22,24 @@ PODS:
   - AFNetworking/UIKit (2.4.1):
     - AFNetworking/NSURLConnection
     - AFNetworking/NSURLSession
-  - Mantle (1.4.1):
+  - Mantle (1.5.1):
     - Mantle/extobjc
-  - Mantle/extobjc (1.4.1)
+  - Mantle/extobjc (1.5.1)
+  - ZZDownloader (0.0.1):
+    - AFDownloadRequestOperation
+    - Mantle
 
 DEPENDENCIES:
-  - AFDownloadRequestOperation (from `https://github.com/steipete/AFDownloadRequestOperation`)
-  - Mantle (~> 1.4.1)
+  - ZZDownloader (from `~/Documents/Bili/ZZDownloader/ZZDownloader`)
 
 EXTERNAL SOURCES:
-  AFDownloadRequestOperation:
-    :git: https://github.com/steipete/AFDownloadRequestOperation
+  ZZDownloader:
+    :local: ~/Documents/Bili/ZZDownloader/ZZDownloader
 
 SPEC CHECKSUMS:
-  AFDownloadRequestOperation: fcb19dc1010296e05c76d863d340051820ffb326
+  AFDownloadRequestOperation: e223a65bc56fb8e6ae5d289b649c7bcc6b307f0d
   AFNetworking: 0aabc6fae66d6e5d039eeb21c315843c7aae51ab
-  Mantle: 1ca9c0fa84d3d3fc98524e7229f30489b6dd44e5
+  Mantle: d7c5ac734579ec751c58fecbf56189853056c58c
+  ZZDownloader: 1497565b8bb7c66cf1ce03dbcbac140ee68867bf
 
 COCOAPODS: 0.34.2
