@@ -16,7 +16,7 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    [ZZDownloader abc];
+    [ZZDownloader dosth];
     // Do any additional setup after loading the view, typically from a nib.
 }
 

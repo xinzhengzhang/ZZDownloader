@@ -10,6 +10,6 @@
 
 @interface ZZDownloader : NSObject
 
-+ (void)abc;
-+ (void)x;
++ (void)dosth;
+
 @end
