@@ -7,16 +7,17 @@
 //
 
 #import "ZZDownloadTaskManager.h"
-#import "ZZDownloadOpOperation.h"
 #import "ZZDownloadOpQueue.h"
-#import <objc/runtime.h>
+#import <CommonCrypto/CommonDigest.h>
+#import "ZZDownloadBaseEntity.h"
 
-@interface ZZDownloadTaskManager () <ZZDownloadOpOperationDataSource, ZZDownloadOpOperationDelegate>
+#define ZZDownloadTaskManagerTaskDir @"zzdownloadtaskmanagertask"
+#define ZZDownloadTaskManagerTaskTempDir @"zzdownloadtaskmanagertasktemp"
+#define ZZDownloadTaskManagerTaskFileDir @"zzdownloadtaskmanagertaskfile"
 
-//@property (nonatomic, strong) NSMutableArray *opQueue;
-@property (nonatomic, strong) NSMutableArray *allTask;
+@interface ZZDownloadTaskManager ()
 
-@property (nonatomic, strong) NSRecursiveLock *lock;
+@property (nonatomic, strong) NSMutableDictionary *allTaskDict;
 
 @end
 
@@ -29,204 +30,205 @@
     dispatch_once(&onceToken, ^{
         queue = [[ZZDownloadTaskManager alloc] init];
 //        queue.opQueue = [NSMutableArray array];
-        queue.allTask = [NSMutableArray array];
-        queue.lock = [[NSRecursiveLock alloc] init];
+        queue.allTaskDict = [NSMutableDictionary dictionary];
+        ZZDownloadOperation *op = [[ZZDownloadOperation alloc] init];
+        op.command = ZZDownloadCommandBuild;
+        [queue doOp:op];
     });
     return queue;
 }
 
-- (void)addOp:(ZZDownloadOperation *)operation
+- (void)addOp:(ZZDownloadOperation *)operation withEntity:(ZZDownloadBaseEntity *)entity;
 {
-    @synchronized(self) {
-        [self updateAllInfoTaskByTask:operation];
-        
-        ZZDownloadOpOperation *opOperation = [[ZZDownloadOpOperation alloc] initWithOperation:operation];
-        opOperation.delegate = self;
-        opOperation.dataSource = self;
-        [[ZZDownloadOpQueue shared] addOperation:opOperation];
-    }
+    [[ZZDownloadOpQueue shared] addOperationWithBlock:^{
+        [self dealEntity:entity];
+        [self doOp:operation];
+    }];
 }
 
-#pragma mark - DownloadOperation DataSource and Delegate
-- (ZZDownloadTask *)getDownloadTaskByClass:(Class<MTLJSONSerializing>)taskClass withId:(NSString *)tId withKey:(NSString *)key
-{
-    for (int i = 0; i < self.allTask.count; i++) {
-        ZZDownloadTask *task = self.allTask[i];
-        BOOL classEqual = [NSStringFromClass(taskClass) isEqualToString:NSStringFromClass(task.class)];
-        NSString *keyId = nil;
-        NSString *selectorName = key;
-        SEL sel = NSSelectorFromString(selectorName);
-        if ([task respondsToSelector:sel]) {
-            keyId = [task performSelector:sel];
-        }
-        BOOL idEqual = [tId isEqualToString:keyId];
-        if (classEqual && idEqual) {
-            return task;
-            break;
-        }
-    }
-    return nil;
-}
-
-- (void)startTask:(ZZDownloadTask *)task
-{
-    if (!task) {
-        return;
-    }
-//    switch (task.state) {
-//        case <#constant#>:
-//            <#statements#>
-//            break;
-//            
-//        default:
-//            break;
-//    }
-}
-
-- (void)stopTask:(ZZDownloadTask *)task
-{
-
-}
-
-- (void)resumeTask:(ZZDownloadTask *)task
-{
-
-}
-
-- (void)removeTask:(ZZDownloadTask *)task
-{
-
-}
-
-- (void)checkTask:(ZZDownloadTask *)task
-{
-
-}
-
-- (void)build
-{
-
-}
 
 #pragma mark - internal method
-- (void)updateAllInfoTaskByTask:(ZZDownloadOperation *)operation
+- (void)dealEntity:(ZZDownloadBaseEntity *)entity
 {
-    ZZDownloadTask *existedTask = nil;
-    for (int i = 0; i < self.allTask.count; i++) {
-        ZZDownloadTask *task = self.allTask[i];
-        BOOL classEqual = [NSStringFromClass(operation.taskClass) isEqualToString:NSStringFromClass(task.class)];
-        NSString *keyId = nil;
-        NSString *selectorName = operation.key;
-        SEL sel = NSSelectorFromString(selectorName);
-        if ([task respondsToSelector:sel]) {
-            keyId = [task performSelector:sel];
-        }
-        BOOL idEqual = [operation.tId isEqualToString:keyId];
-        if (classEqual && idEqual) {
-            existedTask = task;
-            break;
-        }
+    NSString *key = [entity entityKey];
+    if (!key) {
+        return;
     }
+    if (self.allTaskDict[key]) {
+        return;
+    }
+    ZZDownloadTask *task = [[ZZDownloadTask alloc] init];
+    task.state = ZZDownloadStateWaiting;
+    task.key = key;
+    task.params = [MTLJSONAdapter JSONDictionaryFromModel:entity];
    
+    if ([self writeTaskToDisk:task]) {
+        self.allTaskDict[key] = task;
+    }
+}
+
+- (BOOL)writeTaskToDisk:(ZZDownloadTask *)task
+{
+    NSError *error;
+    NSDictionary *dict = [MTLJSONAdapter JSONDictionaryFromModel:task];
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dict options:NSJSONWritingPrettyPrinted error:&error];
+    if (error) {
+        return NO;
+    }
+    NSString *targtetPath = [[ZZDownloadTaskManager taskFolder] stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.bilitask", task.key]];
+    [jsonData writeToFile:targtetPath options:NSDataWritingAtomic error:&error];
+    if (error) {
+        return NO;
+    }
+    return YES;
+}
+
+- (void)doOp:(ZZDownloadOperation *)operation
+{
+    if (operation.command == ZZDownloadCommandBuild) {
+        [self buildAllTaskInfo];
+        return;
+    }
+    
+    ZZDownloadTask *existedTask = self.allTaskDict[operation.key];
     if (existedTask) {
         switch (operation.command) {
             case ZZDownloadCommandStart:
-                switch (existedTask.state) {
-                    case ZZDownloadStatePaused:
-                        existedTask.state = ZZDownloadStateWaiting;
-                        break;
-                    case ZZDownloadStateShouldPause:
-                        existedTask.state = ZZDownloadStateWaiting;
-                        break;
-                    // 是否处理invalid?
-                    default:
-                        break;
-                }
+                [existedTask startWithStartSuccessBlock:^{
+                    // notify pendstart
+                    // assign task mession
+                }];
                 break;
             case ZZDownloadCommandStop:
-                switch (existedTask.state) {
-                    case ZZDownloadStateDownloaded:
-                        NSLog(@"downloaded");
-                        break;
-                    case ZZDownloadStateDownloading:
-                        existedTask.state = ZZDownloadStateShouldPause;
-                        break;
-                    case ZZDownloadStateWaiting:
-                        existedTask.state = ZZDownloadStatePaused;
-                        break;
-                    default:
-                        break;
-                }
+                [existedTask pauseWithPauseSuccessBlock:^{
+                    // notify pend pause
+                    // pause task in queue
+                }];
                 break;
             case ZZDownloadCommandRemove:
-                switch (existedTask.state) {
-                    case ZZDownloadStateWaiting:
-                        [self deleteTaskAndFile:existedTask];
-                        break;
-                    case ZZDownloadStatePaused:
-                        [self deleteTaskAndFile:existedTask];
-                        break;
-                    case ZZDownloadStateShouldPause:
-                        existedTask.state = ZZDownloadStateShouldRemove;
-                        break;
-                    case ZZDownloadStateDownloaded:
-                        [self deleteTaskAndFile:existedTask];
-                        break;
-                    case ZZDownloadStateDownloading:
-                        existedTask.state = ZZDownloadStateShouldRemove;
-                        break;
-                    default:
-                        break;
-                }
-                break;
-            case ZZDownloadCommandResume:
-                // MARK
-                switch (existedTask.state) {
-                    case ZZDownloadStatePaused:
-                        existedTask.state = ZZDownloadStateWaiting;
-                        break;
-                    case ZZDownloadStateShouldPause:
-                        existedTask.state = ZZDownloadStateWaiting;
-                        break;
-                    default:
-                        break;
-                }
+                [existedTask removeWithRemoveSuccessBlock:^{
+                    // notify pend remove
+                    // pause task in queue
+                }];
                 break;
             case ZZDownloadCommandCheck:
-                //do nothing
-                break;
-            case ZZDownloadCommandBuild:
-                [self buildAllTaskInfo];
+                // notify report self
                 break;
             default:
                 break;
         }
     } else {
-        Class task = operation.taskClass;
-        ZZDownloadTask *t = [[task alloc] init];
-        t.state = ZZDownloadStateWaiting;
-        [self addTaskToInfo:t];
+        NSLog(@"warning! unknow task");
     }
 }
 
 - (void)buildAllTaskInfo
 {
-
+    NSArray *filePathList = [self getBiliTaskFilePathList];
+    NSError *error;
+    for (NSString *filePath in filePathList) {
+        NSData *data = [NSData dataWithContentsOfFile:filePath options:NSDataReadingMappedIfSafe error:&error];
+        if (error) {
+            NSLog(@"%@", error);
+            continue;
+        }
+        NSDictionary *rdict = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:&error];
+        if (error) {
+            NSLog(@"%@", error);
+            continue;
+        }
+        ZZDownloadTask *rtask = [MTLJSONAdapter modelOfClass:[ZZDownloadTask class] fromJSONDictionary:rdict error:&error];
+        if (error) {
+            NSLog(@"%@", error);
+            continue;
+        }
+        if (rtask.key) {
+            self.allTaskDict[rtask.key] = rtask;
+        }
+    }
 }
 
-- (void)addTaskToInfo:(ZZDownloadTask *)task
+#pragma mark - internal method
+- (NSArray *)getBiliTaskFilePathList
 {
-    [[ZZDownloadOpQueue shared] addOperationWithBlock:^{
-        [self.allTask addObject:task];
-    }];
+    NSString *taskPath = [ZZDownloadTaskManager taskFolder];
+    NSMutableArray *nameList = [NSMutableArray array];
+    NSArray *tmpList = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:taskPath error:nil];
+    for (NSString *fileName in tmpList) {
+        NSString *fullPath = [taskPath stringByAppendingPathComponent:fileName];
+        BOOL x = NO;
+        if ([[NSFileManager defaultManager] fileExistsAtPath:fullPath isDirectory:&x]) {
+            if ([[fileName pathExtension] isEqualToString:@"bilitask"]) {
+                [nameList addObject:fullPath];
+            }
+        }
+    }
+    return nameList;
 }
 
-- (void)deleteTaskAndFile:(ZZDownloadTask *)task
-{
-    [[ZZDownloadOpQueue shared] addOperationWithBlock:^{
-        [self.allTask removeObject:task];
-        // delete file
-    }];
+#pragma mark - Static
++ (NSString *)taskFolder {
+    NSFileManager *filemgr = [NSFileManager new];
+    static NSString *cacheFolder;
+    
+    if (!cacheFolder) {
+        NSString *cacheDir = NSTemporaryDirectory();
+        cacheFolder = [cacheDir stringByAppendingPathComponent:ZZDownloadTaskManagerTaskFileDir];
+        NSLog(@"~~~%@", cacheFolder);
+    }
+    
+    // ensure all cache directories are there
+    NSError *error = nil;
+    if(![filemgr createDirectoryAtPath:cacheFolder withIntermediateDirectories:YES attributes:nil error:&error]) {
+        NSLog(@"Failed to create cache directory at %@", cacheFolder);
+        cacheFolder = nil;
+    }
+    return cacheFolder;
+}
+
++ (NSString *)downloadFolder {
+    NSFileManager *filemgr = [NSFileManager new];
+    static NSString *cacheFolder;
+    
+    if (!cacheFolder) {
+        NSString *cacheDir = NSTemporaryDirectory();
+        cacheFolder = [cacheDir stringByAppendingPathComponent:ZZDownloadTaskManagerTaskDir];
+    }
+    
+    // ensure all cache directories are there
+    NSError *error = nil;
+    if(![filemgr createDirectoryAtPath:cacheFolder withIntermediateDirectories:YES attributes:nil error:&error]) {
+        NSLog(@"Failed to create cache directory at %@", cacheFolder);
+        cacheFolder = nil;
+    }
+    return cacheFolder;
+}
+
++ (NSString *)cacheFolder {
+    NSFileManager *filemgr = [NSFileManager new];
+    static NSString *cacheFolder;
+    
+    if (!cacheFolder) {
+        NSString *cacheDir = NSTemporaryDirectory();
+        cacheFolder = [cacheDir stringByAppendingPathComponent:ZZDownloadTaskManagerTaskTempDir];
+    }
+    
+    // ensure all cache directories are there
+    NSError *error = nil;
+    if(![filemgr createDirectoryAtPath:cacheFolder withIntermediateDirectories:YES attributes:nil error:&error]) {
+        NSLog(@"Failed to create cache directory at %@", cacheFolder);
+        cacheFolder = nil;
+    }
+    return cacheFolder;
+}
+
+// calculates the MD5 hash of a key
++ (NSString *)md5StringForString:(NSString *)string {
+    const char *str = [string UTF8String];
+    unsigned char r[CC_MD5_DIGEST_LENGTH];
+    CC_MD5(str, (uint32_t)strlen(str), r);
+    return [NSString stringWithFormat:@"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+            r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9], r[10], r[11], r[12], r[13], r[14], r[15]];
 }
 
 @end

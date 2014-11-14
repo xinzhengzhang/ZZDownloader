@@ -11,7 +11,11 @@
 @protocol ZZDownloadParserProtocol <NSObject>
 
 @required
-- (NSString *)destinationPath;
-- (NSArray *)sections;
+- (NSString *)entityType;
+- (NSString *)entityKey;
+
+- (NSString *)destinationDirPath;
+- (NSString *)getSectionUrlWithCount:(NSInteger)index;
+- (NSString *)danmakuPath;
 
 @end

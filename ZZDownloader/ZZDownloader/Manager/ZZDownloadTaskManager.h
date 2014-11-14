@@ -10,10 +10,12 @@
 #import "ZZDownloadTask.h"
 #import "ZZDownloadOperation.h"
 
+#import "ZZDownloadBaseEntity.h"
+
 @interface ZZDownloadTaskManager : NSObject
 
 + (id)shared;
++ (NSString *)taskFolder;
 
-- (void)addOp:(ZZDownloadOperation *)operation;
-
+- (void)addOp:(ZZDownloadOperation *)operation withEntity:(ZZDownloadBaseEntity *)entity;
 @end
