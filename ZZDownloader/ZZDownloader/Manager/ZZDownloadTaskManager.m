@@ -29,7 +29,6 @@
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         queue = [[ZZDownloadTaskManager alloc] init];
-//        queue.opQueue = [NSMutableArray array];
         queue.allTaskDict = [NSMutableDictionary dictionary];
         ZZDownloadOperation *op = [[ZZDownloadOperation alloc] init];
         op.command = ZZDownloadCommandBuild;

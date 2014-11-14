@@ -36,4 +36,40 @@
     [[ZZDownloadTaskManager shared] addOp:operation withEntity:epEntity];
 }
 
+- (void)pauseEpTaskWithEpId:(NSString *)ep_id
+{
+    BiliDownloadEpEntity *epEntity = [[BiliDownloadEpEntity alloc] init];
+    epEntity.ep_id = ep_id;
+    
+    ZZDownloadOperation *operation = [[ZZDownloadOperation alloc] init];
+    operation.command = ZZDownloadCommandStop;
+    operation.key = [epEntity entityKey];
+    
+    [[ZZDownloadTaskManager shared] addOp:operation withEntity:epEntity];
+}
+
+- (void)reoveEpTaskWithEpId:(NSString *)ep_id
+{
+    BiliDownloadEpEntity *epEntity = [[BiliDownloadEpEntity alloc] init];
+    epEntity.ep_id = ep_id;
+    
+    ZZDownloadOperation *operation = [[ZZDownloadOperation alloc] init];
+    operation.command = ZZDownloadCommandRemove;
+    operation.key = [epEntity entityKey];
+    
+    [[ZZDownloadTaskManager shared] addOp:operation withEntity:epEntity];
+}
+
+- (void)checkEpTaskWithEpId:(NSString *)ep_id
+{
+    BiliDownloadEpEntity *epEntity = [[BiliDownloadEpEntity alloc] init];
+    epEntity.ep_id = ep_id;
+    
+    ZZDownloadOperation *operation = [[ZZDownloadOperation alloc] init];
+    operation.command = ZZDownloadCommandCheck;
+    operation.key = [epEntity entityKey];
+    
+    [[ZZDownloadTaskManager shared] addOp:operation withEntity:epEntity];
+}
+
 @end
