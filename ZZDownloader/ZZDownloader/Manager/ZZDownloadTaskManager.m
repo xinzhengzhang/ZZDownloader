@@ -10,6 +10,8 @@
 #import "ZZDownloadOpQueue.h"
 #import <CommonCrypto/CommonDigest.h>
 #import "ZZDownloadBaseEntity.h"
+#import "ZZDownloadNotifyManager.h"
+#import "ZZDownloadMessage.h"
 
 #define ZZDownloadTaskManagerTaskDir @"zzdownloadtaskmanagertask"
 #define ZZDownloadTaskManagerTaskTempDir @"zzdownloadtaskmanagertasktemp"
@@ -56,10 +58,8 @@
     if (self.allTaskDict[key]) {
         return;
     }
-    ZZDownloadTask *task = [[ZZDownloadTask alloc] init];
-    task.state = ZZDownloadStateWaiting;
+    ZZDownloadTask *task = [ZZDownloadTask buildTaskFromDisk:[MTLJSONAdapter JSONDictionaryFromModel:entity]];
     task.key = key;
-    task.params = [MTLJSONAdapter JSONDictionaryFromModel:entity];
    
     if ([self writeTaskToDisk:task]) {
         self.allTaskDict[key] = task;
@@ -111,8 +111,12 @@
                 }];
                 break;
             case ZZDownloadCommandCheck:
-                // notify report self
+            {
+                ZZDownloadMessage *message = [[ZZDownloadMessage alloc] init];
+                message.command = ZZDownloadMessageCommandNeedNotifyUI;
+                [[ZZDownloadNotifyManager shared] addOp:message];
                 break;
+            }
             default:
                 break;
         }
@@ -123,7 +127,8 @@
 
 - (void)buildAllTaskInfo
 {
-    NSArray *filePathList = [self getBiliTaskFilePathList];
+    [self.allTaskDict removeAllObjects];
+    NSArray *filePathList = [ZZDownloadTaskManager getBiliTaskFilePathList];
     NSError *error;
     for (NSString *filePath in filePathList) {
         NSData *data = [NSData dataWithContentsOfFile:filePath options:NSDataReadingMappedIfSafe error:&error];
@@ -147,8 +152,7 @@
     }
 }
 
-#pragma mark - internal method
-- (NSArray *)getBiliTaskFilePathList
++ (NSArray *)getBiliTaskFilePathList
 {
     NSString *taskPath = [ZZDownloadTaskManager taskFolder];
     NSMutableArray *nameList = [NSMutableArray array];

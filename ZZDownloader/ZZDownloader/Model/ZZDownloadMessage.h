@@ -17,8 +17,6 @@ typedef NS_ENUM(NSUInteger, ZZDownloadMessageCommand) {
 @interface ZZDownloadMessage : MTLModel <MTLJSONSerializing>
 
 @property (nonatomic) ZZDownloadMessageCommand command;
-@property (nonatomic) Class<MTLJSONSerializing> taskClass;
-@property (nonatomic, strong) NSString *tId;
 @property (nonatomic, strong) NSString *key;
 
 @end

@@ -15,7 +15,7 @@
 @interface ZZDownloadTaskManager : NSObject
 
 + (id)shared;
-+ (NSString *)taskFolder;
-
++ (NSArray *)getBiliTaskFilePathList;
 - (void)addOp:(ZZDownloadOperation *)operation withEntity:(ZZDownloadBaseEntity *)entity;
+
 @end

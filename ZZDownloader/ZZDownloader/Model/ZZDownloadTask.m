@@ -21,6 +21,7 @@
 {
     if (self = [super init]) {
         self.command = ZZDownloadAssignedCommandNone;
+        self.state = ZZDownloadStateWaiting;
     }
     return self;
 }
@@ -57,10 +58,16 @@
     }
 }
 
+- (void)updateSelfWithActionBlock:(void (^)(void))block
+{
+    block();
+}
+
 + (ZZDownloadTask *)buildTaskFromDisk:(NSDictionary *)params
 {
-    //MARK
-    return [[ZZDownloadTask alloc] init];
+    ZZDownloadTask *t = [[ZZDownloadTask alloc] init];
+    t.params = params;
+    return t;
 }
 
 - (float)getProgress

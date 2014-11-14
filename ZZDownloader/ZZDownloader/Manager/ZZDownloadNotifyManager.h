@@ -7,7 +7,11 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "ZZDownloadMessage.h"
 
 @interface ZZDownloadNotifyManager : NSObject
+
++ (id)shared;
+- (void)addOp:(ZZDownloadMessage *)message;
 
 @end

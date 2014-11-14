@@ -22,8 +22,4 @@ typedef NS_ENUM(NSUInteger, ZZDownloadCommand) {
 @property (nonatomic) ZZDownloadCommand command;
 @property (nonatomic, strong) NSString *key;
 
-//@property (nonatomic) Class<MTLJSONSerializing> taskClass;
-//@property (nonatomic, strong) NSString *tId;
-//@property (nonatomic, strong) NSString *key;
-
 @end
