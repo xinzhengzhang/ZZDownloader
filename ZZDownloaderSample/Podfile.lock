@@ -77,6 +77,6 @@ SPEC CHECKSUMS:
   AFNetworking: 0aabc6fae66d6e5d039eeb21c315843c7aae51ab
   libextobjc: d6146fce3ebea986b7f75fcb4c967639200b88b0
   Mantle: d7c5ac734579ec751c58fecbf56189853056c58c
-  ZZDownloader: ec41d467b07c0511fce34fc33d18f35f2f570734
+  ZZDownloader: 07bdc4fe6b00114f8d29cd6dfe5bb6f897ec67c0
 
 COCOAPODS: 0.34.2
