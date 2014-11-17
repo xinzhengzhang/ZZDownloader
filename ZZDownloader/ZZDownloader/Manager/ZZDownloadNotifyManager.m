@@ -60,28 +60,28 @@
 - (void)buildAllTaskInfo
 {
     [self.allTaskInfoDict removeAllObjects];
-    NSArray *filePathList = [ZZDownloadTaskManager getBiliTaskFilePathList];
-    NSError *error;
-    for (NSString *filePath in filePathList) {
-        NSData *data = [NSData dataWithContentsOfFile:filePath options:NSDataReadingMappedIfSafe error:&error];
-        if (error) {
-            NSLog(@"%@", error);
-            continue;
-        }
-        NSDictionary *rdict = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:&error];
-        if (error) {
-            NSLog(@"%@", error);
-            continue;
-        }
-        ZZDownloadTask *rtask = [MTLJSONAdapter modelOfClass:[ZZDownloadTask class] fromJSONDictionary:rdict error:&error];
-        if (error) {
-            NSLog(@"%@", error);
-            continue;
-        }
-        if (rtask.key) {
-            self.allTaskInfoDict[rtask.key] = rtask;
-        }
-    }
+//    NSArray *filePathList = [ZZDownloadTaskManager getBiliTaskFilePathList];
+//    NSError *error;
+//    for (NSString *filePath in filePathList) {
+//        NSData *data = [NSData dataWithContentsOfFile:filePath options:NSDataReadingMappedIfSafe error:&error];
+//        if (error) {
+//            NSLog(@"%@", error);
+//            continue;
+//        }
+//        NSDictionary *rdict = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:&error];
+//        if (error) {
+//            NSLog(@"%@", error);
+//            continue;
+//        }
+//        ZZDownloadTask *rtask = [MTLJSONAdapter modelOfClass:[ZZDownloadTask class] fromJSONDictionary:rdict error:&error];
+//        if (error) {
+//            NSLog(@"%@", error);
+//            continue;
+//        }
+//        if (rtask.key) {
+//            self.allTaskInfoDict[rtask.key] = rtask;
+//        }
+//    }
 }
 
 @end

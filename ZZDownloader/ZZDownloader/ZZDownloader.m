@@ -13,17 +13,10 @@
 + (void)dosth
 {
     [[ZZDownloadManager shared] startEpTaskWithEpId:@"123"];
-    [[ZZDownloadManager shared] startEpTaskWithEpId:@"123"];
-    [[ZZDownloadManager shared] startEpTaskWithEpId:@"123"];
-    [[ZZDownloadManager shared] startEpTaskWithEpId:@"234"];
-    [[ZZDownloadManager shared] startEpTaskWithEpId:@"423"];
-    [[ZZDownloadManager shared] startEpTaskWithEpId:@"123"];
-    [[ZZDownloadManager shared] startEpTaskWithEpId:@"153"];
-    [[ZZDownloadManager shared] startEpTaskWithEpId:@"123"];
-    [[ZZDownloadManager shared] startEpTaskWithEpId:@"143"];
-    [[ZZDownloadManager shared] startEpTaskWithEpId:@"143"];
-    [[ZZDownloadManager shared] startEpTaskWithEpId:@"423"];
-
+        [[ZZDownloadManager shared] startEpTaskWithEpId:@"124"];
+        [[ZZDownloadManager shared] startEpTaskWithEpId:@"125"];
+        [[ZZDownloadManager shared] startEpTaskWithEpId:@"126"];
+        [[ZZDownloadManager shared] startEpTaskWithEpId:@"127"];
 }
 
 @end

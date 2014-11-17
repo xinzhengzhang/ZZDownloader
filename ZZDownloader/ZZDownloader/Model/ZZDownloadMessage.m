@@ -10,18 +10,4 @@
 
 @implementation ZZDownloadMessage
 
-+ (NSDictionary *)JSONKeyPathsByPropertyKey
-{
-    return @{};
-}
-
-+ (NSValueTransformer *)taskClassJSONTransformer
-{
-    return [MTLValueTransformer reversibleTransformerWithForwardBlock:^(NSString *str) {
-        return NSClassFromString(str);
-    } reverseBlock:^(Class x) {
-        return NSStringFromClass(x);
-    }];
-}
-
 @end

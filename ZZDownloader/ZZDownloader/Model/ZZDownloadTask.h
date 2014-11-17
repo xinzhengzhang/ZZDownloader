@@ -31,8 +31,9 @@ typedef NS_ENUM(NSUInteger, ZZDownloadAssignedCommand) {
 @property (nonatomic) ZZDownloadState state;
 @property (nonatomic) ZZDownloadAssignedCommand command;
 @property (nonatomic) NSString *key;
+@property (nonatomic) NSString *entityType;
 
-@property (nonatomic, strong) NSDictionary *params;
+@property (nonatomic, strong) NSDictionary *argv;
 
 - (void)startWithStartSuccessBlock:(void (^)(void))block;
 
@@ -47,6 +48,10 @@ typedef NS_ENUM(NSUInteger, ZZDownloadAssignedCommand) {
 + (ZZDownloadTask *)buildTaskFromDisk:(NSDictionary *)params;
 
 // used for task info
-- (float)getProgress;
+
+@property (nonatomic ) int32_t triedCount;
+@property (nonatomic) float progress;
+//@property (nonatomic, readwrite) int32_t sectionCount;
+
 
 @end

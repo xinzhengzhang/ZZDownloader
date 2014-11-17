@@ -45,4 +45,8 @@
     return @"";
 }
 
+- (int32_t)getSectionCount
+{
+    return 0;
+}
 @end

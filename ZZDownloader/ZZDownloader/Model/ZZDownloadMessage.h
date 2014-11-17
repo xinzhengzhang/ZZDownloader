@@ -7,6 +7,7 @@
 //
 
 #import <Mantle/Mantle.h>
+#import "ZZDownloadTask.h"
 
 typedef NS_ENUM(NSUInteger, ZZDownloadMessageCommand) {
     ZZDownloadMessageCommandNeedUpdateInfo = 1034,
@@ -14,9 +15,9 @@ typedef NS_ENUM(NSUInteger, ZZDownloadMessageCommand) {
     ZZDownloadMessageCommandNeedBuild
 };
 
-@interface ZZDownloadMessage : MTLModel <MTLJSONSerializing>
+@interface ZZDownloadMessage : NSObject
 
 @property (nonatomic) ZZDownloadMessageCommand command;
 @property (nonatomic, strong) NSString *key;
-
+@property (nonatomic, strong) ZZDownloadTask *task;
 @end

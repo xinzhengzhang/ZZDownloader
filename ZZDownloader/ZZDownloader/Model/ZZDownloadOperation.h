@@ -17,7 +17,7 @@ typedef NS_ENUM(NSUInteger, ZZDownloadCommand) {
     ZZDownloadCommandBuild
 };
 
-@interface ZZDownloadOperation : MTLModel <MTLJSONSerializing>
+@interface ZZDownloadOperation : NSObject
 
 @property (nonatomic) ZZDownloadCommand command;
 @property (nonatomic, strong) NSString *key;

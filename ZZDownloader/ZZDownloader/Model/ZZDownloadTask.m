@@ -10,9 +10,6 @@
 
 @interface ZZDownloadTask ()
 
-@property (nonatomic) float progress;
-@property (nonatomic) int32_t triedCount;
-
 @end
 
 @implementation ZZDownloadTask
@@ -66,13 +63,8 @@
 + (ZZDownloadTask *)buildTaskFromDisk:(NSDictionary *)params
 {
     ZZDownloadTask *t = [[ZZDownloadTask alloc] init];
-    t.params = params;
+    t.argv = params;
     return t;
-}
-
-- (float)getProgress
-{
-    return self.progress;
 }
 
 + (NSDictionary *)JSONKeyPathsByPropertyKey
@@ -80,12 +72,14 @@
     return @{};
 }
 
-+ (NSValueTransformer *)paramsJSONTransformer
++ (NSValueTransformer *)argvJSONTransformer
 {
     return [MTLValueTransformer reversibleTransformerWithForwardBlock:^(NSString *str) {
-        return [NSJSONSerialization JSONObjectWithData:[str dataUsingEncoding:NSUTF8StringEncoding] options:NSJSONReadingAllowFragments error:nil];
+        return [NSJSONSerialization JSONObjectWithData:[str dataUsingEncoding:NSUTF8StringEncoding] options:NSJSONReadingMutableContainers error:nil];
     } reverseBlock:^(NSDictionary *x) {
-        return [NSString stringWithUTF8String:[[NSJSONSerialization dataWithJSONObject:x options:NSJSONWritingPrettyPrinted error:nil] bytes]];
+        NSData *data = [NSJSONSerialization dataWithJSONObject:x options:0 error:nil];
+        NSString *t = [[NSString alloc] initWithBytes:[data bytes] length:[data length] encoding:NSUTF8StringEncoding];
+        return t;
     }];
 }
 

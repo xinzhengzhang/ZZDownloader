@@ -15,6 +15,7 @@
 - (NSString *)entityKey;
 
 - (NSString *)destinationDirPath;
+- (int32_t)getSectionCount;
 - (NSString *)getSectionUrlWithCount:(NSInteger)index;
 - (NSString *)danmakuPath;
 

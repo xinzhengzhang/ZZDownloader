@@ -12,6 +12,11 @@
 #import "ZZDownloadBaseEntity.h"
 #import "ZZDownloadNotifyManager.h"
 #import "ZZDownloadMessage.h"
+#import "AFDownloadRequestOperation.h"
+#import "ZZDownloadUrlConnectionQueue.h"
+#import "ZZDownloadTask+Helper.h"
+
+#import "EXTScope.h"
 
 #define ZZDownloadTaskManagerTaskDir @"zzdownloadtaskmanagertask"
 #define ZZDownloadTaskManagerTaskTempDir @"zzdownloadtaskmanagertasktemp"
@@ -20,7 +25,7 @@
 @interface ZZDownloadTaskManager ()
 
 @property (nonatomic, strong) NSMutableDictionary *allTaskDict;
-
+@property (nonatomic, strong) NSMutableArray *allDownloadRequests;
 @end
 
 @implementation ZZDownloadTaskManager
@@ -32,6 +37,7 @@
     dispatch_once(&onceToken, ^{
         queue = [[ZZDownloadTaskManager alloc] init];
         queue.allTaskDict = [NSMutableDictionary dictionary];
+        queue.allDownloadRequests = [NSMutableArray array];
         ZZDownloadOperation *op = [[ZZDownloadOperation alloc] init];
         op.command = ZZDownloadCommandBuild;
         [queue doOp:op];
@@ -60,7 +66,7 @@
     }
     ZZDownloadTask *task = [ZZDownloadTask buildTaskFromDisk:[MTLJSONAdapter JSONDictionaryFromModel:entity]];
     task.key = key;
-   
+    task.entityType = NSStringFromClass([entity class]);
     if ([self writeTaskToDisk:task]) {
         self.allTaskDict[key] = task;
     }
@@ -91,25 +97,32 @@
     
     ZZDownloadTask *existedTask = self.allTaskDict[operation.key];
     if (existedTask) {
+        @weakify(self);
         switch (operation.command) {
             case ZZDownloadCommandStart:
+            {
                 [existedTask startWithStartSuccessBlock:^{
-                    // notify pendstart
-                    // assign task mession
+                    @strongify(self);
+                    [self startTask:existedTask];
                 }];
                 break;
+            }
             case ZZDownloadCommandStop:
+            {
                 [existedTask pauseWithPauseSuccessBlock:^{
-                    // notify pend pause
-                    // pause task in queue
+                    @strongify(self);
+                    [self pauseTask:existedTask];
                 }];
                 break;
+            }
             case ZZDownloadCommandRemove:
+            {
                 [existedTask removeWithRemoveSuccessBlock:^{
-                    // notify pend remove
-                    // pause task in queue
+                    @strongify(self);
+                    [self removeTask:existedTask];
                 }];
                 break;
+            }
             case ZZDownloadCommandCheck:
             {
                 ZZDownloadMessage *message = [[ZZDownloadMessage alloc] init];
@@ -123,6 +136,104 @@
     } else {
         NSLog(@"warning! unknow task");
     }
+}
+
+- (void)assignDownloadSectionTask:(ZZDownloadBaseEntity *)entity
+{
+    if (!entity || !self.allTaskDict[entity.entityKey]) {
+        return;
+    }
+    ZZDownloadTask *existedTask = self.allTaskDict[entity.entityKey];
+    int32_t sectionCount = [entity getSectionCount];
+    
+    NSString *destinationPath = [[ZZDownloadTaskManager downloadFolder] stringByAppendingPathComponent:[entity destinationDirPath]];
+    NSArray *existedFile = [ZZDownloadTaskManager getBiliTaskFileNameList:destinationPath suffix:@"section"];
+    for (int i = 0; i < sectionCount; i++) {
+        if ([existedFile containsObject:[NSString stringWithFormat:@"%d.section", i]]) {
+            if (i == sectionCount-1) {
+                existedTask.state = ZZDownloadStateDownloaded;
+                [self executeDownloadQueue];
+            }
+            continue;
+        } else {
+            NSString *targetPath = [destinationPath stringByAppendingPathComponent:[NSString stringWithFormat:@"%d.section",i]];
+            NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:[entity getSectionUrlWithCount:i]]];
+            AFDownloadRequestOperation *rq = [[AFDownloadRequestOperation alloc] initWithRequest:request targetPath:targetPath shouldResume:YES];
+            [rq setProgressiveDownloadProgressBlock:^(AFDownloadRequestOperation *operation, NSInteger bytesRead, long long totalBytesRead, long long totalBytesExpected, long long totalBytesReadForFile, long long totalBytesExpectedToReadForFile){
+                if (bytesRead > 0) {
+                    existedTask.state = ZZDownloadStateDownloading;
+                }
+//                NSLog(@"i am %@-%d,my progress = %f", @"", i,totalBytesReadForFile*1.0 / totalBytesExpectedToReadForFile);
+            }];
+            
+            [rq setCompletionBlockWithSuccess:^(AFHTTPRequestOperation *operation, id responseObject) {
+                if (operation.response.statusCode >= 200 && operation.response.statusCode < 400) {
+                    NSLog(@"i downloaded %@-%d", existedTask.key, i);
+                    [self startTask:existedTask];
+                } else if (operation.response.statusCode >= 400) {
+                    [[NSFileManager defaultManager] removeItemAtPath:targetPath error:NULL];
+                    existedTask.triedCount += 1;
+                    if (existedTask.triedCount > 5) {
+                        existedTask.state = ZZDownloadStateInvalid;
+                        [self writeTaskToDisk:existedTask];
+                    }
+                    [self startTask:existedTask];
+                }
+            } failure:^(AFHTTPRequestOperation *operation, NSError *error){
+                NSLog(@"sth download error happened=%@",error);
+            }];
+            [self.allDownloadRequests insertObject:rq atIndex:0];
+            [self executeDownloadQueue];
+            break;
+        }
+    }
+}
+
+- (void)executeDownloadQueue
+{
+    if ([[ZZDownloadUrlConnectionQueue shared] operationCount] == 0 && self.allDownloadRequests.count > 0) {
+        [[ZZDownloadUrlConnectionQueue shared] addOperation:self.allDownloadRequests[0]];
+        [self.allDownloadRequests removeObjectAtIndex:0];
+    }
+}
+
+- (void)startTask:(ZZDownloadTask *)task
+{
+    if (!task || task.state == ZZDownloadStateInvalid) {
+        return;
+    }
+    [self notifyQueueUpdateMessage:task];
+    NSLog(@"i assign %@", task.key);
+    ZZDownloadBaseEntity *entity = [task recoverEntity];
+    [self assignDownloadSectionTask:entity];
+
+}
+
+- (void)pauseTask:(ZZDownloadTask *)task
+{
+    [self notifyQueueUpdateMessage:task];
+    // pause download queue
+}
+
+- (void)removeTask:(ZZDownloadTask *)task
+{
+    [self notifyQueueUpdateMessage:task];
+    // remove download queue
+}
+
+- (void)notifyQueueUpdateMessage:(ZZDownloadTask *)task
+{
+    ZZDownloadMessage *message = [[ZZDownloadMessage alloc] init];
+    message.key = task.key;
+    message.command = ZZDownloadMessageCommandNeedUpdateInfo;
+    message.task = task;
+   
+    ZZDownloadMessage *message2 = [[ZZDownloadMessage alloc] init];
+    message.key = task.key;
+    message.command = ZZDownloadMessageCommandNeedNotifyUI;
+    
+    [[ZZDownloadNotifyManager shared] addOp:message];
+    [[ZZDownloadNotifyManager shared] addOp:message2];
 }
 
 - (void)buildAllTaskInfo
@@ -152,6 +263,26 @@
     }
 }
 
++ (NSArray *)getBiliTaskFileNameList:(NSString *)dirPath suffix:(NSString *)suffix
+{
+    NSString *taskPath = dirPath;
+    NSMutableArray *nameList = [NSMutableArray array];
+    if(![[NSFileManager defaultManager] createDirectoryAtPath:taskPath withIntermediateDirectories:YES attributes:nil error:nil]) {
+        NSLog(@"Failed to create section directory at %@", taskPath);
+    }
+    NSArray *tmpList = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:taskPath error:nil];
+    for (NSString *fileName in tmpList) {
+        NSString *fullPath = [taskPath stringByAppendingPathComponent:fileName];
+        BOOL x = NO;
+        if ([[NSFileManager defaultManager] fileExistsAtPath:fullPath isDirectory:&x]) {
+            if ([[fileName pathExtension] isEqualToString:suffix]) {
+                [nameList addObject:fileName];
+            }
+        }
+    }
+    return nameList;
+}
+
 + (NSArray *)getBiliTaskFilePathList
 {
     NSString *taskPath = [ZZDownloadTaskManager taskFolder];
@@ -175,7 +306,7 @@
     static NSString *cacheFolder;
     
     if (!cacheFolder) {
-        NSString *cacheDir = NSTemporaryDirectory();
+        NSString *cacheDir = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES)[0];
         cacheFolder = [cacheDir stringByAppendingPathComponent:ZZDownloadTaskManagerTaskFileDir];
         NSLog(@"~~~%@", cacheFolder);
     }
@@ -194,7 +325,7 @@
     static NSString *cacheFolder;
     
     if (!cacheFolder) {
-        NSString *cacheDir = NSTemporaryDirectory();
+        NSString *cacheDir = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES)[0];
         cacheFolder = [cacheDir stringByAppendingPathComponent:ZZDownloadTaskManagerTaskDir];
     }
     
@@ -212,7 +343,7 @@
     static NSString *cacheFolder;
     
     if (!cacheFolder) {
-        NSString *cacheDir = NSTemporaryDirectory();
+        NSString *cacheDir = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES)[0];
         cacheFolder = [cacheDir stringByAppendingPathComponent:ZZDownloadTaskManagerTaskTempDir];
     }
     
