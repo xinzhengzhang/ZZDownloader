@@ -17,6 +17,7 @@
         [[ZZDownloadManager shared] startEpTaskWithEpId:@"125"];
         [[ZZDownloadManager shared] startEpTaskWithEpId:@"126"];
         [[ZZDownloadManager shared] startEpTaskWithEpId:@"127"];
+//    [[ZZDownloadManager shared] pauseEpTaskWithEpId:@"123"];
 }
 
 @end

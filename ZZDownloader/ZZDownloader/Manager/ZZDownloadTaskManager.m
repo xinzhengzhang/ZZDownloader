@@ -15,12 +15,15 @@
 #import "AFDownloadRequestOperation.h"
 #import "ZZDownloadUrlConnectionQueue.h"
 #import "ZZDownloadTask+Helper.h"
-
+#import <objc/runtime.h>
 #import "EXTScope.h"
+#import "ZZDownloadManager.h"
 
 #define ZZDownloadTaskManagerTaskDir @"zzdownloadtaskmanagertask"
 #define ZZDownloadTaskManagerTaskTempDir @"zzdownloadtaskmanagertasktemp"
 #define ZZDownloadTaskManagerTaskFileDir @"zzdownloadtaskmanagertaskfile"
+
+static int AFDownloadRequestOperationKeyRT;
 
 @interface ZZDownloadTaskManager ()
 
@@ -147,6 +150,7 @@
     int32_t sectionCount = [entity getSectionCount];
     
     NSString *destinationPath = [[ZZDownloadTaskManager downloadFolder] stringByAppendingPathComponent:[entity destinationDirPath]];
+    
     NSArray *existedFile = [ZZDownloadTaskManager getBiliTaskFileNameList:destinationPath suffix:@"section"];
     for (int i = 0; i < sectionCount; i++) {
         if ([existedFile containsObject:[NSString stringWithFormat:@"%d.section", i]]) {
@@ -159,9 +163,20 @@
             NSString *targetPath = [destinationPath stringByAppendingPathComponent:[NSString stringWithFormat:@"%d.section",i]];
             NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:[entity getSectionUrlWithCount:i]]];
             AFDownloadRequestOperation *rq = [[AFDownloadRequestOperation alloc] initWithRequest:request targetPath:targetPath shouldResume:YES];
+            objc_setAssociatedObject(rq, &AFDownloadRequestOperationKeyRT, entity.entityKey, OBJC_ASSOCIATION_RETAIN);
+            
             [rq setProgressiveDownloadProgressBlock:^(AFDownloadRequestOperation *operation, NSInteger bytesRead, long long totalBytesRead, long long totalBytesExpected, long long totalBytesReadForFile, long long totalBytesExpectedToReadForFile){
-                if (bytesRead > 0) {
-                    existedTask.state = ZZDownloadStateDownloading;
+                if (existedTask.command == ZZDownloadAssignedCommandStart) {
+                    if (bytesRead > 0) {
+                        existedTask.state = ZZDownloadStateDownloading;
+                        existedTask.command = ZZDownloadAssignedCommandNone;
+                    }
+                }
+                static BOOL x = NO;
+                if (!x) {
+//                    [[ZZDownloadManager shared] pauseEpTaskWithEpId:@"123"];
+                    [operation pause];
+                    x = YES;
                 }
 //                NSLog(@"i am %@-%d,my progress = %f", @"", i,totalBytesReadForFile*1.0 / totalBytesExpectedToReadForFile);
             }];
@@ -199,24 +214,50 @@
 
 - (void)startTask:(ZZDownloadTask *)task
 {
-    if (!task || task.state == ZZDownloadStateInvalid) {
+    if (!task || task.command != ZZDownloadAssignedCommandStart || task.state == ZZDownloadStateInvalid) {
         return;
     }
     [self notifyQueueUpdateMessage:task];
     NSLog(@"i assign %@", task.key);
     ZZDownloadBaseEntity *entity = [task recoverEntity];
     [self assignDownloadSectionTask:entity];
-
+    [self writeTaskToDisk:task];
 }
 
 - (void)pauseTask:(ZZDownloadTask *)task
 {
+    if (!task || task.command != ZZDownloadAssignedCommandPause || task.state == ZZDownloadStateInvalid) {
+        return;
+    }
     [self notifyQueueUpdateMessage:task];
-    // pause download queue
+    BOOL downloading = NO;
+    NSLog(@"i stop %@", task.key);
+    AFDownloadRequestOperation *op = self.allDownloadRequests[0];
+    if (op) {
+        NSString *key = objc_getAssociatedObject(op, &AFDownloadRequestOperationKeyRT);
+        if (key) {
+            ZZDownloadTask *task = self.allTaskDict[key];
+            if (task) {
+                if ([task.key isEqualToString:key]) {
+                    downloading = YES;
+                    [op pause];
+                    task.state = ZZDownloadStatePaused;
+                    task.command = ZZDownloadAssignedCommandNone;
+                }
+            }
+        }
+    }
+    if (!downloading) {
+        task.state = ZZDownloadCommandStop;
+    }
+    [self writeTaskToDisk:task];
 }
 
 - (void)removeTask:(ZZDownloadTask *)task
 {
+    if (!task) {
+        return;
+    }
     [self notifyQueueUpdateMessage:task];
     // remove download queue
 }
