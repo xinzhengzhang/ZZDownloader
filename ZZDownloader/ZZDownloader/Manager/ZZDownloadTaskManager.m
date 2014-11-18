@@ -64,15 +64,16 @@
     if (!key) {
         return;
     }
-    if (self.allTaskDict[key]) {
-        return;
+    if (!self.allTaskDict[key]) {
+        ZZDownloadTask *task = [ZZDownloadTask buildTaskFromDisk:[MTLJSONAdapter JSONDictionaryFromModel:entity]];
+        task.key = key;
+        task.entityType = NSStringFromClass([entity class]);
+        [task addObserver:[ZZDownloadNotifyManager shared] forKeyPath:@"state" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:ZZDownloadStateChangedContext];
+        if ([self writeTaskToDisk:task]) {
+            self.allTaskDict[key] = task;
+        }
     }
-    ZZDownloadTask *task = [ZZDownloadTask buildTaskFromDisk:[MTLJSONAdapter JSONDictionaryFromModel:entity]];
-    task.key = key;
-    task.entityType = NSStringFromClass([entity class]);
-    if ([self writeTaskToDisk:task]) {
-        self.allTaskDict[key] = task;
-    }
+    
 }
 
 - (BOOL)writeTaskToDisk:(ZZDownloadTask *)task
@@ -130,6 +131,7 @@
             {
                 ZZDownloadMessage *message = [[ZZDownloadMessage alloc] init];
                 message.command = ZZDownloadMessageCommandNeedNotifyUI;
+                message.key = existedTask.key;
                 [[ZZDownloadNotifyManager shared] addOp:message];
                 break;
             }
@@ -287,7 +289,12 @@
     NSString *targtetPath = [[ZZDownloadTaskManager taskFolder] stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.bilitask", task.key]];
     [[NSFileManager defaultManager] removeItemAtPath:targtetPath error:nil];
     [[NSFileManager defaultManager] removeItemAtPath:destinationPath error:nil];
-    [self.allTaskDict removeObjectForKey:task.key];
+    
+    ZZDownloadTask *rtask = self.allTaskDict[task.key];
+    if (rtask) {
+        [rtask removeObserver:[ZZDownloadNotifyManager shared] forKeyPath:@"state" context:ZZDownloadStateChangedContext];
+        [self.allTaskDict removeObjectForKey:task.key];
+    }
     
     
 }
@@ -381,12 +388,6 @@
             [self deleteTask:self.allTaskDict[task.key]];
         }];
     }
-
-
-
-    
-    
-    // remove download queue
 }
 
 - (void)notifyQueueUpdateMessage:(ZZDownloadTask *)task
@@ -396,12 +397,7 @@
     message.command = ZZDownloadMessageCommandNeedUpdateInfo;
     message.task = task;
    
-    ZZDownloadMessage *message2 = [[ZZDownloadMessage alloc] init];
-    message.key = task.key;
-    message.command = ZZDownloadMessageCommandNeedNotifyUI;
-    
     [[ZZDownloadNotifyManager shared] addOp:message];
-    [[ZZDownloadNotifyManager shared] addOp:message2];
 }
 
 - (void)buildAllTaskInfo
@@ -426,6 +422,7 @@
             continue;
         }
         // 清空之前command的状态
+        [rtask addObserver:[ZZDownloadNotifyManager shared] forKeyPath:@"state" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:ZZDownloadStateChangedContext];
         rtask.command = ZZDownloadAssignedCommandNone;
         if (rtask.key) {
             self.allTaskDict[rtask.key] = rtask;

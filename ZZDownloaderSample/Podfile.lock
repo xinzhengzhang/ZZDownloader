@@ -64,6 +64,31 @@ PODS:
     - AFDownloadRequestOperation
     - libextobjc
     - Mantle
+    - ZZDownloader/Bili
+    - ZZDownloader/Manager
+    - ZZDownloader/Model
+    - ZZDownloader/Parser
+    - ZZDownloader/Queue
+  - ZZDownloader/Bili (0.0.1):
+    - AFDownloadRequestOperation
+    - libextobjc
+    - Mantle
+  - ZZDownloader/Manager (0.0.1):
+    - AFDownloadRequestOperation
+    - libextobjc
+    - Mantle
+  - ZZDownloader/Model (0.0.1):
+    - AFDownloadRequestOperation
+    - libextobjc
+    - Mantle
+  - ZZDownloader/Parser (0.0.1):
+    - AFDownloadRequestOperation
+    - libextobjc
+    - Mantle
+  - ZZDownloader/Queue (0.0.1):
+    - AFDownloadRequestOperation
+    - libextobjc
+    - Mantle
 
 DEPENDENCIES:
   - ZZDownloader (from `~/Documents/Bili/ZZDownloader/ZZDownloader`)
@@ -77,6 +102,6 @@ SPEC CHECKSUMS:
   AFNetworking: 0aabc6fae66d6e5d039eeb21c315843c7aae51ab
   libextobjc: d6146fce3ebea986b7f75fcb4c967639200b88b0
   Mantle: d7c5ac734579ec751c58fecbf56189853056c58c
-  ZZDownloader: 07bdc4fe6b00114f8d29cd6dfe5bb6f897ec67c0
+  ZZDownloader: bf64651e1dc72dd57ce6b1e6cd8ab0dee969e9b6
 
 COCOAPODS: 0.34.2

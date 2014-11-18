@@ -41,10 +41,6 @@ typedef NS_ENUM(NSUInteger, ZZDownloadAssignedCommand) {
 
 - (void)removeWithRemoveSuccessBlock:(void (^)(void))block;
 
-
-// used for notify manager
-- (void)updateSelfWithActionBlock:(void (^)(void))block;
-
 + (ZZDownloadTask *)buildTaskFromDisk:(NSDictionary *)params;
 
 // used for task info

@@ -56,11 +56,6 @@
     }
 }
 
-- (void)updateSelfWithActionBlock:(void (^)(void))block
-{
-    block();
-}
-
 + (ZZDownloadTask *)buildTaskFromDisk:(NSDictionary *)params
 {
     ZZDownloadTask *t = [[ZZDownloadTask alloc] init];
