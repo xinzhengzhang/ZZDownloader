@@ -49,4 +49,11 @@
 {
     return 0;
 }
+
+- (NSString *)destinationRootDirPath
+{
+    NSAssert(nil, @"sub class has not implement ZZDownloadBaseEntity");
+    return @"";
+}
+
 @end

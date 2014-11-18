@@ -14,6 +14,6 @@
 
 - (void)startEpTaskWithEpId:(NSString *)ep_id;
 - (void)pauseEpTaskWithEpId:(NSString *)ep_id;
-- (void)reoveEpTaskWithEpId:(NSString *)ep_id;
+- (void)removeEpTaskWithEpId:(NSString *)ep_id;
 - (void)checkEpTaskWithEpId:(NSString *)ep_id;
 @end

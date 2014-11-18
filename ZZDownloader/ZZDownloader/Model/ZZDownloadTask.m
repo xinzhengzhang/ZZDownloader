@@ -30,7 +30,8 @@
         if (self.state == ZZDownloadStateFail) {
             self.triedCount += 1;
         }
-        if (self.state == ZZDownloadStateFail || self.state == ZZDownloadStatePaused || self.state == ZZDownloadStateWaiting) {
+        // 手贱要是有人删已下载文件
+        if (self.state == ZZDownloadStateFail || self.state == ZZDownloadStatePaused || self.state == ZZDownloadStateWaiting /*|| self.state == ZZDownloadStateDownloaded*/) {
             self.command = ZZDownloadAssignedCommandStart;
             block();
         }

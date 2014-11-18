@@ -26,12 +26,13 @@
     return [NSString stringWithFormat:@"bangumi/ep%@/youku/high", self.ep_id];
 }
 
+- (NSString *)destinationRootDirPath
+{
+    return [NSString stringWithFormat:@"bangumi/ep%@", self.ep_id];
+}
+
 - (NSString *)getSectionUrlWithCount:(NSInteger)index
 {
-//    return @"";
-    if (index == 1 && [self.ep_id isEqualToString:@"123"]) {
-        return @"http://10.240.131.227:8000/Leanp";
-    }
     if (index == 0) {
         return @"http://10.240.131.227:8000/Leanpub.Functional%20Reactive%20Programming%20on%20iOS.2014.pdf";
     }

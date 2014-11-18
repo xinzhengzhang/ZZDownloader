@@ -48,7 +48,7 @@
     [[ZZDownloadTaskManager shared] addOp:operation withEntity:epEntity];
 }
 
-- (void)reoveEpTaskWithEpId:(NSString *)ep_id
+- (void)removeEpTaskWithEpId:(NSString *)ep_id
 {
     BiliDownloadEpEntity *epEntity = [[BiliDownloadEpEntity alloc] init];
     epEntity.ep_id = ep_id;
