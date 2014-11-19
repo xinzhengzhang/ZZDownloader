@@ -10,12 +10,14 @@
 #import <Mantle/Mantle.h>
 
 typedef NS_ENUM(NSUInteger, ZZDownloadState) {
-    ZZDownloadStateWaiting = 1234,
+    ZZDownloadStateNothing = 1234,
+    ZZDownloadStateWaiting,
     ZZDownloadStateDownloading,
     ZZDownloadStatePaused,
     ZZDownloadStateDownloaded,
     ZZDownloadStateFail,
-    ZZDownloadStateInvalid
+    ZZDownloadStateInvalid,
+    ZZDownloadStateRemoved
 };
 
 typedef NS_ENUM(NSUInteger, ZZDownloadAssignedCommand) {

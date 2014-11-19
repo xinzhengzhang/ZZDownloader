@@ -18,7 +18,7 @@
 {
     if (self = [super init]) {
         self.command = ZZDownloadAssignedCommandNone;
-        self.state = ZZDownloadStateWaiting;
+        self.state = ZZDownloadStateNothing;
     }
     return self;
 }
@@ -31,8 +31,9 @@
             self.triedCount += 1;
         }
         // 手贱要是有人删已下载文件
-        if (self.state == ZZDownloadStateFail || self.state == ZZDownloadStatePaused || self.state == ZZDownloadStateWaiting /*|| self.state == ZZDownloadStateDownloaded*/) {
+        if (self.state == ZZDownloadStateNothing|| self.state == ZZDownloadStateFail || self.state == ZZDownloadStatePaused || self.state == ZZDownloadStateWaiting || self.state == ZZDownloadStateRemoved /*|| self.state == ZZDownloadStateDownloaded*/) {
             self.command = ZZDownloadAssignedCommandStart;
+            self.state = ZZDownloadStateWaiting;
             block();
         }
     }
@@ -40,8 +41,8 @@
 
 - (void)pauseWithPauseSuccessBlock:(void (^)(void))block
 {
-    if (self.command != ZZDownloadAssignedCommandPause) {
-        if (self.state == ZZDownloadStateWaiting || self.state == ZZDownloadStateDownloading) {
+    if (self.command != ZZDownloadAssignedCommandPause && self.command != ZZDownloadAssignedCommandRemove) {
+        if (self.state == ZZDownloadStateWaiting || self.state == ZZDownloadStateDownloading || self.state == ZZDownloadStateNothing) {
             self.command = ZZDownloadAssignedCommandPause;
             block();
         }

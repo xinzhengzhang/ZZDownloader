@@ -7,6 +7,9 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "ZZDownloadBaseEntity.h"
+
+extern NSString * const ZZDownloadNotifyUiNotification;
 
 @interface ZZDownloadManager : NSObject
 
@@ -15,5 +18,5 @@
 - (void)startEpTaskWithEpId:(NSString *)ep_id;
 - (void)pauseEpTaskWithEpId:(NSString *)ep_id;
 - (void)removeEpTaskWithEpId:(NSString *)ep_id;
-- (void)checkEpTaskWithEpId:(NSString *)ep_id;
+- (void)checkEpTaskWithEpId:(NSString *)ep_id withCompletationBlock:(void (^)(ZZDownloadBaseEntity *))block;
 @end

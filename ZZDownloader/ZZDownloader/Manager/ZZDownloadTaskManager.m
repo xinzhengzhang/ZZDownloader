@@ -24,8 +24,11 @@
 
 @interface ZZDownloadTaskManager ()
 
+// 所有操作在op queue
 @property (nonatomic, strong) NSMutableDictionary *allTaskDict;
+// 所有操作在 manager quque
 @property (nonatomic, strong) NSMutableArray *allDownloadRequests;
+
 @property (nonatomic, strong) ZZDownloadRequestOperation *runningOperation;
 @property (nonatomic) dispatch_queue_t managerQueue;
 @end
@@ -44,21 +47,21 @@
         queue.managerQueue = dispatch_queue_create("com.zzdownloader.taskmanager.operation.quque", DISPATCH_QUEUE_SERIAL);
         ZZDownloadOperation *op = [[ZZDownloadOperation alloc] init];
         op.command = ZZDownloadCommandBuild;
-        [queue doOp:op];
+        [queue doOp:op entity:nil block:nil];
     });
     return queue;
 }
 
-- (void)addOp:(ZZDownloadOperation *)operation withEntity:(ZZDownloadBaseEntity *)entity;
+- (void)addOp:(ZZDownloadOperation *)operation withEntity:(ZZDownloadBaseEntity *)entity block:(void (^)(id))block
+
 {
     [[ZZDownloadOpQueue shared] addOperationWithBlock:^{
-        [self dealEntity:entity];
-        [self doOp:operation];
+        [self doOp:operation entity:entity block:block];
     }];
 }
 
 #pragma mark - internal method
-- (void)dealEntity:(ZZDownloadBaseEntity *)entity
+- (void)addTaskByEntity:(ZZDownloadBaseEntity *)entity
 {
     NSString *key = [entity entityKey];
     if (!key) {
@@ -69,9 +72,13 @@
         task.key = key;
         task.entityType = NSStringFromClass([entity class]);
         [task addObserver:[ZZDownloadNotifyManager shared] forKeyPath:@"state" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:ZZDownloadStateChangedContext];
+        [self notifyQueueUpdateMessage:task];
         if ([self writeTaskToDisk:task]) {
             self.allTaskDict[key] = task;
         }
+    } else {
+        ZZDownloadTask *task = self.allTaskDict[key];
+        task.argv = [MTLJSONAdapter JSONDictionaryFromModel:entity];
     }
     
 }
@@ -92,12 +99,22 @@
     return YES;
 }
 
-- (void)doOp:(ZZDownloadOperation *)operation
+- (void)doOp:(ZZDownloadOperation *)operation entity:(ZZDownloadBaseEntity *)entity block:(void (^)(id))block
 {
     if (operation.command == ZZDownloadCommandBuild) {
         [self buildAllTaskInfo];
         return;
     }
+    if (operation.command == ZZDownloadCommandCheck) {
+        ZZDownloadMessage *message = [[ZZDownloadMessage alloc] init];
+        message.command = ZZDownloadMessageCommandNeedNotifyUIByCheck;
+        message.key = entity.entityKey;
+        message.block = block;
+        [[ZZDownloadNotifyManager shared] addOp:message];
+        return;
+    }
+    
+    [self addTaskByEntity:entity];
     
     ZZDownloadTask *existedTask = self.allTaskDict[operation.key];
     if (existedTask) {
@@ -127,17 +144,10 @@
                 }];
                 break;
             }
-            case ZZDownloadCommandCheck:
-            {
-                ZZDownloadMessage *message = [[ZZDownloadMessage alloc] init];
-                message.command = ZZDownloadMessageCommandNeedNotifyUI;
-                message.key = existedTask.key;
-                [[ZZDownloadNotifyManager shared] addOp:message];
-                break;
-            }
             default:
                 break;
         }
+        [self notifyQueueUpdateMessage:existedTask];
         [self writeTaskToDisk:existedTask];
     } else {
         NSLog(@"warning! unknow task");
@@ -292,11 +302,11 @@
     
     ZZDownloadTask *rtask = self.allTaskDict[task.key];
     if (rtask) {
+        rtask.state = ZZDownloadStateRemoved;
+        [self notifyQueueRemoveMessage:rtask];
         [rtask removeObserver:[ZZDownloadNotifyManager shared] forKeyPath:@"state" context:ZZDownloadStateChangedContext];
         [self.allTaskDict removeObjectForKey:task.key];
     }
-    
-    
 }
 
 - (void)startTask:(ZZDownloadTask *)task
@@ -304,7 +314,6 @@
     if (!task || task.command != ZZDownloadAssignedCommandStart || task.state == ZZDownloadStateInvalid) {
         return;
     }
-    [self notifyQueueUpdateMessage:task];
     if (task.state == ZZDownloadStatePaused) {
         NSLog(@"i resume %@", task.key);
         [self resumeTask:task];
@@ -321,7 +330,6 @@
     if (!task || task.command != ZZDownloadAssignedCommandPause || task.state == ZZDownloadStateInvalid) {
         return;
     }
-    [self notifyQueueUpdateMessage:task];
     NSLog(@"i stop %@", task.key);
     
     for (ZZDownloadRequestOperation *op in self.allDownloadRequests) {
@@ -350,7 +358,6 @@
     if (!task || task.command != ZZDownloadAssignedCommandRemove) {
         return;
     }
-    [self notifyQueueUpdateMessage:task];
     NSLog(@"i remove %@", task.key);
    
     BOOL scheduled = NO;
@@ -384,10 +391,17 @@
         [self.runningOperation cancel];
     }
     if (!scheduled) {
-        [[ZZDownloadOpQueue shared] addOperationWithBlock:^{
-            [self deleteTask:self.allTaskDict[task.key]];
-        }];
+        [self deleteTask:self.allTaskDict[task.key]];
     }
+}
+
+- (void)notifyQueueRemoveMessage:(ZZDownloadTask *)task
+{
+    ZZDownloadMessage *message = [[ZZDownloadMessage alloc] init];
+    message.key = task.key;
+    message.command = ZZDownloadMessageCommandRemoveTaskInfo;
+    
+    [[ZZDownloadNotifyManager shared] addOp:message];
 }
 
 - (void)notifyQueueUpdateMessage:(ZZDownloadTask *)task
@@ -424,6 +438,7 @@
         // 清空之前command的状态
         [rtask addObserver:[ZZDownloadNotifyManager shared] forKeyPath:@"state" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:ZZDownloadStateChangedContext];
         rtask.command = ZZDownloadAssignedCommandNone;
+        [self notifyQueueUpdateMessage:rtask];
         if (rtask.key) {
             self.allTaskDict[rtask.key] = rtask;
         }

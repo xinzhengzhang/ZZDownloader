@@ -11,6 +11,9 @@
 #import "ZZDownloadOperation.h"
 #import <Mantle/Mantle.h>
 #import "ZZDownloadTaskManager.h"
+#import "ZZDownloadNotifyManager.h"
+
+NSString * const ZZDownloadNotifyUiNotification = @"ZZDownloadNotifyUiNotification";
 
 @implementation ZZDownloadManager
 
@@ -33,7 +36,7 @@
     operation.command = ZZDownloadCommandStart;
     operation.key = [epEntity entityKey];
     
-    [[ZZDownloadTaskManager shared] addOp:operation withEntity:epEntity];
+    [[ZZDownloadTaskManager shared] addOp:operation withEntity:epEntity block:nil];
 }
 
 - (void)pauseEpTaskWithEpId:(NSString *)ep_id
@@ -45,7 +48,7 @@
     operation.command = ZZDownloadCommandStop;
     operation.key = [epEntity entityKey];
     
-    [[ZZDownloadTaskManager shared] addOp:operation withEntity:epEntity];
+    [[ZZDownloadTaskManager shared] addOp:operation withEntity:epEntity block:nil];
 }
 
 - (void)removeEpTaskWithEpId:(NSString *)ep_id
@@ -57,10 +60,10 @@
     operation.command = ZZDownloadCommandRemove;
     operation.key = [epEntity entityKey];
     
-    [[ZZDownloadTaskManager shared] addOp:operation withEntity:epEntity];
+    [[ZZDownloadTaskManager shared] addOp:operation withEntity:epEntity block:nil];
 }
 
-- (void)checkEpTaskWithEpId:(NSString *)ep_id
+- (void)checkEpTaskWithEpId:(NSString *)ep_id withCompletationBlock:(void (^)(ZZDownloadBaseEntity *))block
 {
     BiliDownloadEpEntity *epEntity = [[BiliDownloadEpEntity alloc] init];
     epEntity.ep_id = ep_id;
@@ -69,7 +72,7 @@
     operation.command = ZZDownloadCommandCheck;
     operation.key = [epEntity entityKey];
     
-    [[ZZDownloadTaskManager shared] addOp:operation withEntity:epEntity];
+    [[ZZDownloadTaskManager shared] addOp:operation withEntity:epEntity block:block];
 }
 
 @end

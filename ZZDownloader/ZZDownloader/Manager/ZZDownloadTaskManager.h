@@ -16,6 +16,6 @@
 
 + (id)shared;
 + (NSArray *)getBiliTaskFilePathList;
-- (void)addOp:(ZZDownloadOperation *)operation withEntity:(ZZDownloadBaseEntity *)entity;
+- (void)addOp:(ZZDownloadOperation *)operation withEntity:(ZZDownloadBaseEntity *)entity block:(void (^)(id))block;
 
 @end

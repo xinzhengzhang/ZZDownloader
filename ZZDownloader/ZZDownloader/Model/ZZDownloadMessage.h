@@ -8,10 +8,13 @@
 
 #import <Mantle/Mantle.h>
 #import "ZZDownloadTask.h"
+#import "ZZDownloadBaseEntity.h"
 
 typedef NS_ENUM(NSUInteger, ZZDownloadMessageCommand) {
     ZZDownloadMessageCommandNeedUpdateInfo = 1034,
     ZZDownloadMessageCommandNeedNotifyUI,
+    ZZDownloadMessageCommandNeedNotifyUIByCheck,
+    ZZDownloadMessageCommandRemoveTaskInfo,
     ZZDownloadMessageCommandNeedBuild
 };
 
@@ -20,4 +23,6 @@ typedef NS_ENUM(NSUInteger, ZZDownloadMessageCommand) {
 @property (nonatomic) ZZDownloadMessageCommand command;
 @property (nonatomic, strong) NSString *key;
 @property (nonatomic, strong) ZZDownloadTask *task;
+@property (nonatomic, copy) void (^block)(id);
+
 @end
