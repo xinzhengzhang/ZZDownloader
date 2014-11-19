@@ -7,6 +7,7 @@
 //
 
 #import "ZZDownloadRequestOperation.h"
+#import <CommonCrypto/CommonDigest.h>
 
 @interface ZZDownloadRequestOperation ()
 
@@ -36,4 +37,16 @@
     }
     [super connection:connection didReceiveData:data];
 }
+
+- (NSString *)tempPath {
+    NSString *tempPath = nil;
+    if (self.targetPath) {
+        NSString *rootPath = NSHomeDirectory();
+        NSString *subPath = [self.targetPath substringFromIndex:[rootPath length]];
+        NSString *md5URLString = [[self class] md5StringForString:subPath];
+        tempPath = [[[self class] cacheFolder] stringByAppendingPathComponent:md5URLString];
+    }
+    return tempPath;
+}
+
 @end

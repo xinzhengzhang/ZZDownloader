@@ -18,6 +18,10 @@
 
 + (void)dosth
 {
+    [[ZZDownloadManager shared] startEpTaskWithEpId:@"1000"];
+ 
+    
+    return;
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(xxx:) name:ZZDownloadNotifyUiNotification object:nil];
     
     NSArray *epIds = @[@"100", @"101", @"102", @"103", @"104", @"105"];

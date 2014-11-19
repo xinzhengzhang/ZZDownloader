@@ -33,13 +33,13 @@
 
 - (NSString *)getSectionUrlWithCount:(NSInteger)index
 {
-    if (index == 0) {
+    if (index == 2) {
         return @"http://10.240.131.227:8000/Leanpub.Functional%20Reactive%20Programming%20on%20iOS.2014.pdf";
     }
     if (index == 1) {
         return @"http://10.240.131.227:8000/FunctionalReactivePixels-master.zip";
     }
-    if (index == 2) {
+    if (index == 0) {
         return @"http://10.240.131.227:8000/FauxPas-1.2.zip";
     }
     return @"";
