@@ -33,6 +33,7 @@
 
 - (NSString *)getSectionUrlWithCount:(NSInteger)index
 {
+    return @"http://v.iask.com/v_play_ipad.php?vid=93146987";
     if (index == 2) {
         return @"http://10.240.131.227:8000/Leanpub.Functional%20Reactive%20Programming%20on%20iOS.2014.pdf";
     }
@@ -45,6 +46,7 @@
     return @"";
 }
 
+
 - (NSString *)danmakuPath
 {
     return @"";
@@ -52,7 +54,7 @@
 
 - (int32_t)getSectionCount
 {
-    return 3;
+    return 1;
 }
 
 @end

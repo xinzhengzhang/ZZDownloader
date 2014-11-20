@@ -23,6 +23,51 @@
     return self;
 }
 
+- (NSMutableArray *)sectionsDownloadedList
+{
+    if (!_sectionsDownloadedList) {
+        _sectionsDownloadedList = [NSMutableArray array];
+    }
+    return _sectionsDownloadedList;
+}
+
+- (NSMutableArray *)sectionsLengthList
+{
+    if (!_sectionsLengthList) {
+        _sectionsLengthList = [NSMutableArray array];
+    }
+    return _sectionsLengthList;
+}
+
+- (long long)getTotalLength
+{
+    long long t = 0;
+    for (NSNumber *n in self.sectionsLengthList) {
+        long long x = [n longLongValue];
+        t += x;
+    }
+    return t;
+}
+
+- (long long)getDownloadedLength
+{
+    long long t = 0;
+    for (NSNumber *n in self.sectionsDownloadedList) {
+        long long x = [n longLongValue];
+        t += x;
+    }
+    return t;
+}
+
+- (CGFloat)getProgress
+{
+    if (self.state == ZZDownloadStateDownloaded) {
+        return 1.0f;
+    }
+    CGFloat x = [self getDownloadedLength] * 1.0 / ([self getTotalLength] ?: 1);
+    return x >= 1.0f ? 0.99 : x;
+}
+
 #pragma mark - interface
 - (void)startWithStartSuccessBlock:(void (^)(void))block;
 {
@@ -30,8 +75,7 @@
         if (self.state == ZZDownloadStateFail) {
             self.triedCount += 1;
         }
-        // 手贱要是有人删已下载文件
-        if (self.state == ZZDownloadStateNothing|| self.state == ZZDownloadStateFail || self.state == ZZDownloadStatePaused || self.state == ZZDownloadStateWaiting || self.state == ZZDownloadStateRemoved /*|| self.state == ZZDownloadStateDownloaded*/) {
+        if (self.state == ZZDownloadStateNothing|| self.state == ZZDownloadStateFail || self.state == ZZDownloadStatePaused || self.state == ZZDownloadStateWaiting || self.state == ZZDownloadStateRemoved) {
             self.command = ZZDownloadAssignedCommandStart;
             self.state = ZZDownloadStateWaiting;
             block();
@@ -77,6 +121,26 @@
         NSData *data = [NSJSONSerialization dataWithJSONObject:x options:0 error:nil];
         NSString *t = [[NSString alloc] initWithBytes:[data bytes] length:[data length] encoding:NSUTF8StringEncoding];
         return t;
+    }];
+}
+
++ (NSValueTransformer *)sectionsLengthListJSONTransformer
+{
+    return [MTLValueTransformer reversibleTransformerWithForwardBlock:^(NSString *str) {
+        NSArray *x = [str componentsSeparatedByString:@","];
+        return [NSMutableArray arrayWithArray:x];
+    } reverseBlock:^(NSArray *x) {
+        return [x componentsJoinedByString:@","];
+    }];
+}
+
++ (NSValueTransformer *)sectionsDownloadedListJSONTransformer
+{
+    return [MTLValueTransformer reversibleTransformerWithForwardBlock:^(NSString *str) {
+        NSArray *x = [str componentsSeparatedByString:@","];
+        return [NSMutableArray arrayWithArray:x];
+    } reverseBlock:^(NSArray *x) {
+        return [x componentsJoinedByString:@","];
     }];
 }
 

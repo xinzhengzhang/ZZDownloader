@@ -63,7 +63,7 @@ NSString * const ZZDownloadNotifyUiNotification = @"ZZDownloadNotifyUiNotificati
     [[ZZDownloadTaskManager shared] addOp:operation withEntity:epEntity block:nil];
 }
 
-- (void)checkEpTaskWithEpId:(NSString *)ep_id withCompletationBlock:(void (^)(ZZDownloadBaseEntity *))block
+- (void)checkEpTaskWithEpId:(NSString *)ep_id withCompletationBlock:(void (^)(ZZDownloadTaskInfo *))block
 {
     BiliDownloadEpEntity *epEntity = [[BiliDownloadEpEntity alloc] init];
     epEntity.ep_id = ep_id;

@@ -10,6 +10,8 @@
 #import "ZZDownloadTask.h"
 #import "ZZDownloadBaseEntity.h"
 
+#define ZZDownloadValidEntity @[@"BiliDownloadAVEntity", @"BiliDownloadEpEntity"]
+
 @interface ZZDownloadTask (Helper)
 
 - (ZZDownloadBaseEntity *)recoverEntity;

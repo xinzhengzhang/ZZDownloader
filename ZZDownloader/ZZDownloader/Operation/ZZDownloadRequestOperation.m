@@ -43,8 +43,11 @@
     if (self.targetPath) {
         NSString *rootPath = NSHomeDirectory();
         NSString *subPath = [self.targetPath substringFromIndex:[rootPath length]];
-        NSString *md5URLString = [[self class] md5StringForString:subPath];
-        tempPath = [[[self class] cacheFolder] stringByAppendingPathComponent:md5URLString];
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundeclared-selector"
+        NSString *md5URLString = [[self class] performSelector:@selector(md5StringForString:) withObject:subPath];
+        tempPath = [[[self class] performSelector:@selector(cacheFolder)] stringByAppendingPathComponent:md5URLString];
+#pragma clang diagnostic pop
     }
     return tempPath;
 }

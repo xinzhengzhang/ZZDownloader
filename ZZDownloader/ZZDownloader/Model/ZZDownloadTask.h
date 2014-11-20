@@ -47,9 +47,13 @@ typedef NS_ENUM(NSUInteger, ZZDownloadAssignedCommand) {
 
 // used for task info
 
-@property (nonatomic ) int32_t triedCount;
-@property (nonatomic) float progress;
-//@property (nonatomic, readwrite) int32_t sectionCount;
+@property (nonatomic) int32_t triedCount;
 
+- (long long)getTotalLength;
+- (long long)getDownloadedLength;
+- (CGFloat)getProgress;
+
+@property (nonatomic) NSMutableArray *sectionsLengthList;
+@property (nonatomic) NSMutableArray *sectionsDownloadedList;
 
 @end

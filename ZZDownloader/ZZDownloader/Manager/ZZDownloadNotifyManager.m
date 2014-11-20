@@ -12,6 +12,7 @@
 #import "EXTScope.h"
 #import "ZZDownloadManager.h"
 #import "ZZDownloadTask+Helper.h"
+#import "ZZDownloadTaskInfo.h"
 
 void * const ZZDownloadStateChangedContext = (void*)&ZZDownloadStateChangedContext;
 
@@ -71,13 +72,9 @@ void * const ZZDownloadStateChangedContext = (void*)&ZZDownloadStateChangedConte
 
 - (void)notifyUi:(NSString *)key withCompletationBlock:(void (^)(id))block
 {
-    ZZDownloadTask *task = self.allTaskInfoDict[key];
+    ZZDownloadTaskInfo *task = self.allTaskInfoDict[key];
     if (task) {
-        ZZDownloadBaseEntity *entity = [task recoverEntity];
-        if (entity) {
-            NSDictionary *message = @{@"task": [task copy], @"entity": entity};
-            [[NSNotificationCenter defaultCenter] postNotificationName:ZZDownloadNotifyUiNotification object:message];
-        }
+        [[NSNotificationCenter defaultCenter] postNotificationName:ZZDownloadNotifyUiNotification object:task];
     }
     if (block) {
         block(self.allTaskInfoDict[key]);
@@ -89,16 +86,18 @@ void * const ZZDownloadStateChangedContext = (void*)&ZZDownloadStateChangedConte
     if (!task || !task.key) {
         return;
     }
-    ZZDownloadTask *tmpTask = self.allTaskInfoDict[task.key];
+    ZZDownloadTaskInfo *tmpTask = self.allTaskInfoDict[task.key];
     if (!tmpTask) {
-        tmpTask = [[ZZDownloadTask alloc] init];
-        tmpTask.entityType = task.entityType;
+        tmpTask = [[ZZDownloadTaskInfo alloc] init];
         tmpTask.key = task.key;
+        tmpTask.entityType = task.entityType;
         self.allTaskInfoDict[task.key] = tmpTask;
     }
     tmpTask.state = task.state;
     tmpTask.command = task.command;
     tmpTask.argv = task.argv;
+    tmpTask.sectionsDownloadedList = task.sectionsDownloadedList;
+    tmpTask.sectionsLengthList = task.sectionsLengthList;
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
@@ -125,28 +124,6 @@ void * const ZZDownloadStateChangedContext = (void*)&ZZDownloadStateChangedConte
 - (void)buildAllTaskInfo
 {
     [self.allTaskInfoDict removeAllObjects];
-//    NSArray *filePathList = [ZZDownloadTaskManager getBiliTaskFilePathList];
-//    NSError *error;
-//    for (NSString *filePath in filePathList) {
-//        NSData *data = [NSData dataWithContentsOfFile:filePath options:NSDataReadingMappedIfSafe error:&error];
-//        if (error) {
-//            NSLog(@"%@", error);
-//            continue;
-//        }
-//        NSDictionary *rdict = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:&error];
-//        if (error) {
-//            NSLog(@"%@", error);
-//            continue;
-//        }
-//        ZZDownloadTask *rtask = [MTLJSONAdapter modelOfClass:[ZZDownloadTask class] fromJSONDictionary:rdict error:&error];
-//        if (error) {
-//            NSLog(@"%@", error);
-//            continue;
-//        }
-//        if (rtask.key) {
-//            self.allTaskInfoDict[rtask.key] = rtask;
-//        }
-//    }
 }
 
 @end
