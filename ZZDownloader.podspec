@@ -7,29 +7,29 @@ Pod::Spec.new do |s|
   s.author         = { 'zxz' => 'zhangxzheng@gmail.com' }
   s.ios.deployment_target = '6.0'
   s.requires_arc   = true
-  s.source_files   = 'ZZDownloader/*.{h,m}'
+  s.source_files   = 'ZZDownloader/ZZDownloader/*.{h,m}'
 
   s.subspec 'Bili' do |ss|
-	ss.source_files= 'ZZDownloader/Bili/*.{h,m}'
+	ss.source_files= 'ZZDownloader/ZZDownloader/Bili/*.{h,m}'
   end
 
   s.subspec 'Manager' do |ss|
-	ss.source_files = 'ZZDownloader/Manager/*.{h,m}'
+	ss.source_files = 'ZZDownloader/ZZDownloader/Manager/*.{h,m}'
   end
 
   s.subspec 'Model' do |ss|
-	ss.source_files = 'ZZDownloader/Model/*.{h,m}'
+	ss.source_files = 'ZZDownloader/ZZDownloader/Model/*.{h,m}'
   end
 
   s.subspec 'Parser' do |ss|
-	ss.source_files = 'ZZDownloader/Parser/*.{h,m}'
+	ss.source_files = 'ZZDownloader/ZZDownloader/Parser/*.{h,m}'
   end
 
    s.subspec 'Queue' do |ss|
-	ss.source_files = 'ZZDownloader/Queue/*.{h,m}'
+	ss.source_files = 'ZZDownloader/ZZDownloader/Queue/*.{h,m}'
   end
 
- s.public_header_files = 'ZZDownloader/*.h'
+ s.public_header_files = 'ZZDownloader/ZZDownloader/*.h'
   
   s.license      = { :type => 'Apache License, Version 2.0', :text => <<-LICENSE
     Licensed under the Apache License, Version 2.0 (the "License");
