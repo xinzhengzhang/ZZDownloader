@@ -12,10 +12,24 @@
 @interface ZZDownloadRequestOperation ()
 
 @property (nonatomic) BOOL _paused;
-
 @end
 
 @implementation ZZDownloadRequestOperation
+
+- (id)initWithRequest:(NSURLRequest *)urlRequest targetPath:(NSString *)targetPath shouldResume:(BOOL)shouldResume forcusContentRange:(BOOL)yesOrNo
+{
+    if (self = [super initWithRequest:urlRequest targetPath:targetPath shouldResume:shouldResume]) {
+        if (yesOrNo) {
+            if (!self.request.allHTTPHeaderFields[@"Range"]) {
+                NSMutableURLRequest *mutableURLRequest = [self.request mutableCopy];
+                NSString *requestRange = [NSString stringWithFormat:@"bytes=%d-", 0];
+                [mutableURLRequest setValue:requestRange forHTTPHeaderField:@"Range"];
+                [self performSelector:@selector(setRequest:) withObject:mutableURLRequest];
+            }
+        }
+    }
+    return self;
+}
 
 - (void)pause
 {

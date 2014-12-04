@@ -14,8 +14,12 @@
 
 @interface ZZDownloadTaskManager : NSObject
 
+//default is no
+@property (nonatomic) BOOL enableDownloadUnderWWAN;
 + (id)shared;
 + (NSArray *)getBiliTaskFilePathList;
++ (NSString *)downloadFolder;
 - (void)addOp:(ZZDownloadOperation *)operation withEntity:(ZZDownloadBaseEntity *)entity block:(void (^)(id))block;
+- (BOOL)isDownloading;
 
 @end

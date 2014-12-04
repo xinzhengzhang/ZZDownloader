@@ -13,18 +13,32 @@ typedef NS_ENUM(NSUInteger, ZZDownloadState) {
     ZZDownloadStateNothing = 1234,
     ZZDownloadStateWaiting,
     ZZDownloadStateDownloading,
-    ZZDownloadStatePaused,
+    ZZDownloadStateRealPaused,
+    ZZDownloadStateInterrputPaused,
     ZZDownloadStateDownloaded,
     ZZDownloadStateFail,
     ZZDownloadStateInvalid,
-    ZZDownloadStateRemoved
+    ZZDownloadStateRemoved,
+    ZZDownloadStateDownloadingDanmaku,
+    ZZDownloadStateDownloadingCover,
+    ZZDownloadStateParsing
 };
 
 typedef NS_ENUM(NSUInteger, ZZDownloadAssignedCommand) {
     ZZDownloadAssignedCommandNone,
     ZZDownloadAssignedCommandPause,
     ZZDownloadAssignedCommandRemove,
-    ZZDownloadAssignedCommandStart
+    ZZDownloadAssignedCommandStart,
+    ZZDownloadAssignedCommandInterruptPaused
+};
+
+extern NSString * const ZZDownloadTaskErrorDomain;
+
+typedef NS_ENUM(NSUInteger, ZZDownloadTaskErrorType) {
+    ZZDownloadTaskErrorTypeHttpError = 444,
+    ZZDownloadTaskErrorTypeTransferError,
+    ZZDownloadTaskErrorTypeIOError,
+    ZZDownloadTaskErrorTypeInterruptError
 };
 
 // MARK: subClass has to implement ZZDownloadParserProtocol
@@ -37,9 +51,11 @@ typedef NS_ENUM(NSUInteger, ZZDownloadAssignedCommand) {
 
 @property (nonatomic, strong) NSDictionary *argv;
 
+@property (nonatomic) NSError *lastestError;
+
 - (void)startWithStartSuccessBlock:(void (^)(void))block;
 
-- (void)pauseWithPauseSuccessBlock:(void (^)(void))block;
+- (void)pauseWithPauseSuccessBlock:(void (^)(void))block ukeru:(BOOL)ukeru;
 
 - (void)removeWithRemoveSuccessBlock:(void (^)(void))block;
 
@@ -52,8 +68,10 @@ typedef NS_ENUM(NSUInteger, ZZDownloadAssignedCommand) {
 - (long long)getTotalLength;
 - (long long)getDownloadedLength;
 - (CGFloat)getProgress;
+- (NSArray *)getSectionsContentTimes;
 
 @property (nonatomic) NSMutableArray *sectionsLengthList;
 @property (nonatomic) NSMutableArray *sectionsDownloadedList;
+@property (nonatomic) NSMutableArray *sectionsContentTime;
 
 @end

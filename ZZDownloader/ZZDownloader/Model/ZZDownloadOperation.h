@@ -12,9 +12,14 @@
 typedef NS_ENUM(NSUInteger, ZZDownloadCommand) {
     ZZDownloadCommandStart = 1001,
     ZZDownloadCommandStop,
+    ZZDownloadCommandInterruptStop,
     ZZDownloadCommandRemove,
     ZZDownloadCommandCheck,
-    ZZDownloadCommandBuild
+    ZZDownloadCommandBuild,
+    ZZDownloadCommandResumeAll,
+    ZZDownloadCommandPauseAll,
+    ZZDownloadCommandCheckAllGroup,
+    ZZDownloadCommandCheckGroup
 };
 
 @interface ZZDownloadOperation : NSObject

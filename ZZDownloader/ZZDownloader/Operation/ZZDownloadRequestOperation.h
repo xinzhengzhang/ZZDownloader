@@ -10,6 +10,7 @@
 
 @interface ZZDownloadRequestOperation : AFDownloadRequestOperation
 
+- (id)initWithRequest:(NSURLRequest *)urlRequest targetPath:(NSString *)targetPath shouldResume:(BOOL)shouldResume forcusContentRange:(BOOL)yesOrNo;
 @property (nonatomic, strong) NSString *key;
 
 @end

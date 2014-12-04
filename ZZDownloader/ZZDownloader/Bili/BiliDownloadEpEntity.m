@@ -46,6 +46,10 @@
     return @"";
 }
 
+- (ZZDownloadEntityType)getTaskEntityType
+{
+    return ZZDownloadEntityTypeNormal;
+}
 
 - (NSString *)danmakuPath
 {

@@ -26,6 +26,19 @@
     return _sectionsLengthList;
 }
 
+- (NSMutableArray *)sectionsContentTime
+{
+    if (!_sectionsContentTime) {
+        _sectionsContentTime = [NSMutableArray array];
+    }
+    return _sectionsContentTime;
+}
+
+- (NSArray *)getSectionsTotalLength
+{
+    return [self.sectionsContentTime copy];
+}
+
 - (long long)getTotalLength
 {
     long long t = 0;

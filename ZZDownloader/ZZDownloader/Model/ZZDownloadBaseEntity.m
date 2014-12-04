@@ -15,6 +15,47 @@
     return @{};
 }
 
+- (NSString *)title
+{
+    NSAssert(nil, @"sub class has not implement ZZDownloadBaseEntity");
+    return @"";
+}
+
+- (NSUInteger)getSectionTotalLengthWithCount:(NSInteger)index
+{
+    NSAssert(nil, @"sub class has not implement ZZDownloadBaseEntity");
+    return 0;
+}
+
+- (void)downloadCoverWithDownloadStartBlock:(void (^)(void))block
+{
+    NSAssert(nil, @"sub class has not implement ZZDownloadBaseEntity");
+}
+
+- (NSString *)aggregationKey
+{
+    NSAssert(nil, @"sub class has not implement ZZDownloadBaseEntity");
+    return @"";
+}
+
+- (NSString *)aggregationType
+{
+    NSAssert(nil, @"sub class has not implement ZZDownloadBaseEntity");
+    return @"";
+}
+
+- (NSString *)realKey
+{
+    NSAssert(nil, @"sub class has not implement ZZDownloadBaseEntity");
+    return @"";
+}
+
+- (NSString *)getTypeTag:(BOOL)focusUpdate
+{
+    NSAssert(nil, @"sub class has not implement ZZDownloadBaseEntity");
+    return @"";
+}
+
 - (NSString *)entityType
 {
     NSAssert(nil, @"sub class has not implement ZZDownloadBaseEntity");
@@ -39,7 +80,18 @@
     return @"";
 }
 
-- (NSString *)danmakuPath
+- (void)downloadDanmakuWithDownloadStartBlock:(void (^)(void))block
+{
+    NSAssert(nil, @"sub class has not implement ZZDownloadBaseEntity");
+}
+
+- (NSString *)getDanmakuPath
+{
+    NSAssert(nil, @"sub class has not implement ZZDownloadBaseEntity");
+    return @"";
+}
+
+- (NSString *)getCoverPath
 {
     NSAssert(nil, @"sub class has not implement ZZDownloadBaseEntity");
     return @"";

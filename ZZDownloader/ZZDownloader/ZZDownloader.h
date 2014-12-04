@@ -6,10 +6,9 @@
 //  Copyright (c) 2014 zhangxinzheng. All rights reserved.
 //
 
-#import <Foundation/Foundation.h>
+#import "BiliDownloadManager.h"
+#import "EXTScope.h"
 
 @interface ZZDownloader : NSObject
-
-+ (void)dosth;
 
 @end

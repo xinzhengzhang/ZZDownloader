@@ -8,6 +8,8 @@
 
 #import "ZZDownloadTask.h"
 
+NSString * const ZZDownloadTaskErrorDomain = @"ZZDownloadTaskErrorDomain";
+
 @interface ZZDownloadTask ()
 
 @end
@@ -37,6 +39,19 @@
         _sectionsLengthList = [NSMutableArray array];
     }
     return _sectionsLengthList;
+}
+
+- (NSMutableArray *)sectionsContentTime
+{
+    if (!_sectionsContentTime) {
+        _sectionsContentTime = [NSMutableArray array];
+    }
+    return _sectionsContentTime;
+}
+
+- (NSArray *)getSectionsContentTimes
+{
+    return [self.sectionsContentTime copy];
 }
 
 - (long long)getTotalLength
@@ -71,23 +86,26 @@
 #pragma mark - interface
 - (void)startWithStartSuccessBlock:(void (^)(void))block;
 {
-    if (self.command == ZZDownloadAssignedCommandNone || self.command == ZZDownloadAssignedCommandPause || self.command == ZZDownloadAssignedCommandRemove) {
-        if (self.state == ZZDownloadStateFail) {
+    if (self.command == ZZDownloadAssignedCommandNone || self.command == ZZDownloadAssignedCommandPause || self.command == ZZDownloadAssignedCommandRemove || self.command == ZZDownloadAssignedCommandInterruptPaused) {
+        if (self.state == ZZDownloadStateFail ) {
             self.triedCount += 1;
         }
-        if (self.state == ZZDownloadStateNothing|| self.state == ZZDownloadStateFail || self.state == ZZDownloadStatePaused || self.state == ZZDownloadStateWaiting || self.state == ZZDownloadStateRemoved) {
+        if (self.state == ZZDownloadStateNothing|| self.state == ZZDownloadStateFail || self.state == ZZDownloadStateRealPaused || self.state == ZZDownloadStateWaiting || self.state == ZZDownloadStateRemoved || self.state == ZZDownloadStateInterrputPaused) {
             self.command = ZZDownloadAssignedCommandStart;
-            self.state = ZZDownloadStateWaiting;
             block();
         }
     }
 }
 
-- (void)pauseWithPauseSuccessBlock:(void (^)(void))block
+- (void)pauseWithPauseSuccessBlock:(void (^)(void))block ukeru:(BOOL)ukeru
 {
     if (self.command != ZZDownloadAssignedCommandPause && self.command != ZZDownloadAssignedCommandRemove) {
-        if (self.state == ZZDownloadStateWaiting || self.state == ZZDownloadStateDownloading || self.state == ZZDownloadStateNothing) {
-            self.command = ZZDownloadAssignedCommandPause;
+        if (self.state == ZZDownloadStateWaiting || self.state == ZZDownloadStateDownloading || self.state == ZZDownloadStateNothing || self.state == ZZDownloadStateParsing || self.state == ZZDownloadStateDownloadingCover || self.state == ZZDownloadStateDownloadingDanmaku) {
+            if (ukeru) {
+                self.command = ZZDownloadAssignedCommandInterruptPaused;
+            } else {
+                self.command = ZZDownloadAssignedCommandPause;
+            }
             block();
         }
     }
@@ -144,4 +162,35 @@
     }];
 }
 
++ (NSValueTransformer *)sectionsContentTimeJSONTransformer
+{
+    return [MTLValueTransformer reversibleTransformerWithForwardBlock:^(NSString *str) {
+        NSArray *x = [str componentsSeparatedByString:@","];
+        NSMutableArray *t = [NSMutableArray array];
+        for (NSString *tt in x){
+            [t addObject:[NSNumber numberWithInteger:[tt integerValue]]];
+        }
+        return t;
+    } reverseBlock:^(NSArray *x) {
+        NSMutableArray *t = [NSMutableArray array];
+        for (NSNumber *num in x) {
+            [t addObject:[NSString stringWithFormat:@"%@",num]];
+        }
+        return [t componentsJoinedByString:@","];
+    }];
+}
+
++ (NSValueTransformer *)lastestErrorJSONTransformer
+{
+    return [MTLValueTransformer reversibleTransformerWithForwardBlock:^(NSString *str) {
+        NSError *error = nil;
+        if (str) {
+            error = [NSKeyedUnarchiver unarchiveObjectWithData:[str dataUsingEncoding:NSUTF8StringEncoding]];
+        }
+        return error;
+    } reverseBlock:^(NSError *error) {
+        NSData *data = [NSKeyedArchiver archivedDataWithRootObject:error];
+        return [NSString stringWithUTF8String:[data bytes]];
+    }];
+}
 @end

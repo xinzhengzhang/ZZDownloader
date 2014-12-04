@@ -17,15 +17,17 @@
 @property (nonatomic) NSString *entityType;
 
 @property (nonatomic, strong) NSDictionary *argv;
-
+@property (nonatomic) NSError *lastestError;
 @property (nonatomic) int32_t triedCount;
 
 @property (nonatomic) NSMutableArray *sectionsLengthList;
 @property (nonatomic) NSMutableArray *sectionsDownloadedList;
+@property (nonatomic) NSMutableArray *sectionsContentTime;
 
 - (long long)getTotalLength;
 - (long long)getDownloadedLength;
 - (CGFloat)getProgress;
+- (NSArray *)getSectionsTotalLength;
 
 // used for recover entity
 - (ZZDownloadBaseEntity *)recoverEntity;

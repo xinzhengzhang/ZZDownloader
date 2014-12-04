@@ -12,4 +12,6 @@
 
 @interface ZZDownloadBaseEntity : MTLModel <MTLJSONSerializing, ZZDownloadParserProtocol>
 
+@property (nonatomic) NSString *typeTag;
+
 @end

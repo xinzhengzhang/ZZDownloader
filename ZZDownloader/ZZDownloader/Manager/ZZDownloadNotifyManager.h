@@ -10,6 +10,7 @@
 #import "ZZDownloadMessage.h"
 
 extern void * const ZZDownloadStateChangedContext;
+extern NSString * const ZZDownloadTaskNotifyUiNotification;
 
 @interface ZZDownloadNotifyManager : NSObject
 

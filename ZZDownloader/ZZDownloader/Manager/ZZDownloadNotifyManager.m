@@ -10,18 +10,17 @@
 #import "ZZDownloadNotifyQueue.h"
 #import "ZZDownloadTaskManager.h"
 #import "EXTScope.h"
-#import "ZZDownloadManager.h"
 #import "ZZDownloadTask+Helper.h"
 #import "ZZDownloadTaskInfo.h"
 
 void * const ZZDownloadStateChangedContext = (void*)&ZZDownloadStateChangedContext;
+NSString * const ZZDownloadTaskNotifyUiNotification = @"ZZDownloadTaskNotifyUiNotification";
 
 @interface ZZDownloadNotifyManager ()
 
 @property (nonatomic, strong) NSMutableDictionary *allTaskInfoDict;
 
 @end
-
 
 @implementation ZZDownloadNotifyManager
 + (id)shared
@@ -67,6 +66,7 @@ void * const ZZDownloadStateChangedContext = (void*)&ZZDownloadStateChangedConte
     if (!key) {
         return;
     }
+    [self notifyUi:key withCompletationBlock:nil];
     [self.allTaskInfoDict removeObjectForKey:key];
 }
 
@@ -74,7 +74,9 @@ void * const ZZDownloadStateChangedContext = (void*)&ZZDownloadStateChangedConte
 {
     ZZDownloadTaskInfo *task = self.allTaskInfoDict[key];
     if (task) {
-        [[NSNotificationCenter defaultCenter] postNotificationName:ZZDownloadNotifyUiNotification object:task];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [[NSNotificationCenter defaultCenter] postNotificationName:ZZDownloadTaskNotifyUiNotification object:task];
+        });
     }
     if (block) {
         block(self.allTaskInfoDict[key]);
@@ -92,12 +94,15 @@ void * const ZZDownloadStateChangedContext = (void*)&ZZDownloadStateChangedConte
         tmpTask.key = task.key;
         tmpTask.entityType = task.entityType;
         self.allTaskInfoDict[task.key] = tmpTask;
+        [self notifyUi:task.key withCompletationBlock:nil];
     }
     tmpTask.state = task.state;
     tmpTask.command = task.command;
     tmpTask.argv = task.argv;
+    tmpTask.lastestError = task.lastestError;
     tmpTask.sectionsDownloadedList = task.sectionsDownloadedList;
     tmpTask.sectionsLengthList = task.sectionsLengthList;
+    tmpTask.sectionsContentTime = task.sectionsContentTime;
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
@@ -106,6 +111,7 @@ void * const ZZDownloadStateChangedContext = (void*)&ZZDownloadStateChangedConte
         if ([change[NSKeyValueChangeNewKey] unsignedIntegerValue] != [change[NSKeyValueChangeOldKey] unsignedIntegerValue]) {
 //            NSLog(@"key=%@ old = %@ new = %@", [object key], change[@"old"], change[@"new"]);
             ZZDownloadMessage *message = [[ZZDownloadMessage alloc] init];
+            
             message.command = ZZDownloadMessageCommandNeedUpdateInfo;
             message.key = [object key];
             message.task = object;
