@@ -48,4 +48,5 @@ Pod::Spec.new do |s|
   s.dependency   'AFDownloadRequestOperation'
   s.dependency   'Mantle'
   s.dependency   'libextobjc'
+  s.dependency   'SVProgressHUD'
 end

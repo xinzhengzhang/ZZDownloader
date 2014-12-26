@@ -14,6 +14,7 @@
 #import "ZZDownloadNotifyManager.h"
 #import "ZZDownloadTaskGroupManager.h"
 #import "ZZDownloadTaskManager.h"
+#import "ZZDownloadTaskManagerV2.h"
 
 @interface BiliDownloadManager : NSObject
 
@@ -36,5 +37,7 @@
 
 // NSArray: [BiliDownloadAvGroup,]
 - (void)checkAllGroupWithCompletationBlock:(void (^)(NSArray *))block;
+
+
 
 @end

@@ -21,4 +21,6 @@
 @property (nonatomic) NSString *cid;
 @property (nonatomic) NSString *title;
 @property (nonatomic) NSString *coverUrl;
+
+@property (nonatomic) NSString *avname;
 @end

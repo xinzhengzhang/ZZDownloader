@@ -16,7 +16,7 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    [ZZDownloader dosth];
+//    [ZZDownloader dosth];
     
 //    UIViewController *x1 = [UIViewController new];
 //    x1.view.backgroundColor = [UIColor redColor];

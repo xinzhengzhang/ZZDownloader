@@ -15,10 +15,14 @@ typedef NS_ENUM(NSUInteger, ZZDownloadMessageCommand) {
     ZZDownloadMessageCommandNeedNotifyUI,
     ZZDownloadMessageCommandNeedNotifyUIByCheck,
     ZZDownloadMessageCommandRemoveTaskInfo,
+    ZZDownloadMessageCommandNotifyDiskBakuhatu,
+    ZZDownloadMessageCommandNotifyDiskWarning,
+    ZZDownloadMessageCommandNotifyNetWorkChangedInterrupt,
+    ZZDownloadMessageCommandNotifyNetworkChangedResume,
     ZZDownloadMessageCommandNeedBuild
 };
 
-@interface ZZDownloadMessage : NSObject
+@interface ZZDownloadMessage : NSObject <NSCopying>
 
 @property (nonatomic) ZZDownloadMessageCommand command;
 @property (nonatomic, strong) NSString *key;

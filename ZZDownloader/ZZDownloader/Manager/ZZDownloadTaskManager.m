@@ -34,7 +34,7 @@
 
 @property (nonatomic, strong) ZZDownloadRequestOperation *runningOperation;
 @property (nonatomic) dispatch_queue_t managerQueue;
-
+@property (nonatomic) dispatch_queue_t luaQueue;
 @property (nonatomic) BOOL couldDownload;
 @end
 
@@ -50,14 +50,15 @@
         queue.allTaskDict = [NSMutableDictionary dictionary];
         queue.allDownloadRequests = [NSMutableArray array];
         queue.managerQueue = dispatch_queue_create("com.zzdownloader.taskmanager.operation.quque", DISPATCH_QUEUE_SERIAL);
+        queue.luaQueue = dispatch_queue_create("com.zzdownloader.taskmanager.lua.queue", DISPATCH_QUEUE_SERIAL);
         ZZDownloadOperation *op = [[ZZDownloadOperation alloc] init];
         op.command = ZZDownloadCommandBuild;
         [queue doOp:op entity:nil block:nil];
         queue.couldDownload = YES;
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [NSTimer scheduledTimerWithTimeInterval:1 target:queue selector:@selector(notifyDownloadUpdateMessage) userInfo:nil repeats:YES];
-            [NSTimer scheduledTimerWithTimeInterval:30 target:queue selector:@selector(watchDog) userInfo:nil repeats:YES];
-        });
+//        dispatch_async(dispatch_get_main_queue(), ^{
+//            [NSTimer scheduledTimerWithTimeInterval:1 target:queue selector:@selector(notifyDownloadUpdateMessage) userInfo:nil repeats:YES];
+//            [NSTimer scheduledTimerWithTimeInterval:30 target:queue selector:@selector(watchDog) userInfo:nil repeats:YES];
+//        });
     });
     return queue;
 }
@@ -119,7 +120,9 @@
 - (void)doOp:(ZZDownloadOperation *)operation entity:(ZZDownloadBaseEntity *)entity block:(void (^)(id))block
 {
     if (operation.command == ZZDownloadCommandBuild) {
-        [self buildAllTaskInfo];
+        dispatch_sync(self.managerQueue, ^{
+            [self buildAllTaskInfo];
+        });
         return;
     }
     if (operation.command == ZZDownloadCommandCheck) {
@@ -146,8 +149,9 @@
         [[ZZDownloadTaskGroupManager shared] checkAllTaskGroupWithCompletationBlock:block];;
         return;
     }
-    
-    [self addTaskByEntity:entity updateTask:operation.command == ZZDownloadCommandStart];
+    dispatch_sync(self.managerQueue, ^{
+        [self addTaskByEntity:entity updateTask:operation.command == ZZDownloadCommandStart];
+    });
     
     ZZDownloadTask *existedTask = self.allTaskDict[operation.key];
     if (existedTask) {
@@ -155,10 +159,16 @@
         switch (operation.command) {
             case ZZDownloadCommandStart:
             {
-                [existedTask startWithStartSuccessBlock:^{
-                    @strongify(self);
-                    [self startTask:existedTask fifo:YES];
-                }];
+                if ([self settingCouldDownload]) {
+                    [existedTask startWithStartSuccessBlock:^{
+                        @strongify(self);
+                        [self startTask:existedTask fifo:YES];
+                    }];
+                } else {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        [[[UIAlertView alloc] initWithTitle:@"网络设置异常" message:@"如需在蜂窝下开启下载请在设置中勾选> <" delegate:nil cancelButtonTitle:@"知道啦" otherButtonTitles:nil] show];
+                    });
+                }
                 break;
             }
             case ZZDownloadCommandStop:
@@ -199,6 +209,9 @@
 
 - (BOOL)settingCouldDownload
 {
+    if (self.enableDownloadUnderWWAN) {
+        return YES;
+    }
     Reachability* curReach = [Reachability reachabilityWithHostName:@"www.baidu.com"];
     NetworkStatus status = [curReach currentReachabilityStatus];
     NSParameterAssert([curReach isKindOfClass: [Reachability class]]);
@@ -221,155 +234,174 @@
     }
 
     ZZDownloadTask *existedTask = self.allTaskDict[entity.entityKey];
+    existedTask.argv = [MTLJSONAdapter JSONDictionaryFromModel:entity];
 //        existedTask.lastestError = [NSError errorWithDomain:ZZDownloadTaskErrorDomain code:ZZDownloadTaskErrorTypeInterruptError userInfo:@{NSLocalizedDescriptionKey:@"网络环境设置无法下载"}];
 //        existedTask.command = ZZDownloadAssignedCommandNone;
 //        [self notifyQueueUpdateMessage:existedTask];
 //        return;
 //    }
-    ZZDownloadState ts = existedTask.state;
-    existedTask.state = ZZDownloadStateParsing;
+    dispatch_async(self.luaQueue, ^{
     
-    NSString *needTypeTag = [entity getTypeTag:YES];
-    int32_t sectionCount = [entity getSectionCount];
+        ZZDownloadState ts = existedTask.state;
+        existedTask.state = ZZDownloadStateParsing;
+        
+        NSString *needTypeTag = [entity getTypeTag:YES];
+        int32_t sectionCount = [entity getSectionCount];
 
-    BOOL x1 = sectionCount != 0 && sectionCount != existedTask.sectionsLengthList.count;
-    BOOL x2 = sectionCount != 0 && sectionCount != existedTask.sectionsDownloadedList.count;
-    BOOL x3 = !needTypeTag || ((existedTask.argv[@"typeTag"] != NSNull.null) && [existedTask.argv[@"typeTag"] isEqualToString:needTypeTag]);
-    
-    existedTask.argv = [MTLJSONAdapter JSONDictionaryFromModel:entity];
-    // 判断任务是否过期
-    if (x1 || x2 || !x3) {
-        [self overdueTask:existedTask];
-        for (int i = 0; i < sectionCount; i++) {
-            [existedTask.sectionsDownloadedList addObject:[NSNumber numberWithLongLong:0]];
-            [existedTask.sectionsLengthList addObject:[NSNumber numberWithLongLong:0]];
-            [existedTask.sectionsContentTime addObject:[NSNumber numberWithUnsignedInteger:0]];
+        BOOL x1 = sectionCount != 0 && sectionCount != existedTask.sectionsLengthList.count;
+        BOOL x2 = sectionCount != 0 && sectionCount != existedTask.sectionsDownloadedList.count;
+        BOOL x3 = !needTypeTag || ((existedTask.argv[@"typeTag"] != NSNull.null) && [existedTask.argv[@"typeTag"] isEqualToString:needTypeTag]);
+       
+        dispatch_sync(self.managerQueue, ^{
+            existedTask.argv = [MTLJSONAdapter JSONDictionaryFromModel:entity];
+        });
+        
+        // 判断任务是否过期
+        if (x1 || x2 || !x3) {
+            dispatch_sync(self.managerQueue, ^{
+                [self overdueTask:existedTask];
+                for (int i = 0; i < sectionCount; i++) {
+                    [existedTask.sectionsDownloadedList addObject:[NSNumber numberWithLongLong:0]];
+                    [existedTask.sectionsLengthList addObject:[NSNumber numberWithLongLong:0]];
+                    [existedTask.sectionsContentTime addObject:[NSNumber numberWithUnsignedInteger:0]];
+                }
+            });
         }
-    }
-   
-    [entity downloadDanmakuWithDownloadStartBlock:^{
-        existedTask.state = ZZDownloadStateDownloadingDanmaku;
-    }];
-    [entity downloadCoverWithDownloadStartBlock:^{
-        existedTask.state = ZZDownloadStateDownloadingCover;
-    }];
-    existedTask.state = ts;
-    
-    NSString *destinationPath = [[ZZDownloadTaskManager downloadFolder] stringByAppendingPathComponent:[entity destinationDirPath]];
-    if (sectionCount == 0) {
-        existedTask.lastestError = [NSError errorWithDomain:ZZDownloadTaskErrorDomain code:ZZDownloadTaskErrorTypeInterruptError userInfo:@{NSLocalizedDescriptionKey:[NSString stringWithFormat:@"task parse fail:%@command:%d state:%d", existedTask.key, (int32_t)existedTask.command, (int32_t)existedTask.state]}];
-        existedTask.command = ZZDownloadAssignedCommandNone;
-    }
-    
-    NSArray *existedFile = [ZZDownloadTaskManager getBiliTaskFileNameList:destinationPath suffix:@"section"];
-    for (int i = 0; i < sectionCount; i++) {
-        if ([existedFile containsObject:[NSString stringWithFormat:@"%d.section", i]]) {
-            if (i == sectionCount-1) {
-                existedTask.state = ZZDownloadStateDownloaded;
-                existedTask.lastestError = nil;
-                [self notifyDownloadUpdateMessage];
-                existedTask.command = ZZDownloadAssignedCommandNone;
-                [self writeTaskToDisk:existedTask];
-                dispatch_async(self.managerQueue, ^{
+       
+        [entity downloadDanmakuWithDownloadStartBlock:^{
+            existedTask.state = ZZDownloadStateDownloadingDanmaku;
+        }];
+        [entity downloadCoverWithDownloadStartBlock:^{
+            existedTask.state = ZZDownloadStateDownloadingCover;
+        }];
+        existedTask.state = ts;
+        
+        NSString *destinationPath = [[ZZDownloadTaskManager downloadFolder] stringByAppendingPathComponent:[entity destinationDirPath]];
+        if (sectionCount == 0) {
+            existedTask.lastestError = [NSError errorWithDomain:ZZDownloadTaskErrorDomain code:ZZDownloadTaskErrorTypeInterruptError userInfo:@{NSLocalizedDescriptionKey:[NSString stringWithFormat:@"task parse fail:%@command:%d state:%d", existedTask.key, (int32_t)existedTask.command, (int32_t)existedTask.state]}];
+            existedTask.command = ZZDownloadAssignedCommandNone;
+            [self dealFailTask:existedTask];
+        }
+        NSArray *existedFile = [ZZDownloadTaskManager getBiliTaskFileNameList:destinationPath suffix:@"section"];
+        for (int i = 0; i < sectionCount; i++) {
+            if ([existedFile containsObject:[NSString stringWithFormat:@"%d.section", i]]) {
+                if (i == sectionCount-1) {
+                    existedTask.state = ZZDownloadStateDownloaded;
+                    existedTask.lastestError = nil;
+                    [self notifyQueueUpdateMessage:existedTask];
+                    existedTask.command = ZZDownloadAssignedCommandNone;
+                    [self writeTaskToDisk:existedTask];
+                    dispatch_async(self.managerQueue, ^{
+                        [self executeDownloadQueue];
+                    });
+                }
+                continue;
+            } else {
+                existedTask.state = ZZDownloadStateWaiting;
+                NSString *targetPath = [destinationPath stringByAppendingPathComponent:[NSString stringWithFormat:@"%d.section",i]];
+                NSUInteger totalLength = [entity getSectionTotalLengthWithCount:i];
+                existedTask.sectionsContentTime[i] = [NSNumber numberWithUnsignedInteger:totalLength];
+                NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:[entity getSectionUrlWithCount:i]]];
+                [request addValue:[NSString stringWithUTF8String:LIBAVFORMAT_IDENT] forHTTPHeaderField:@"User-Agent"];
+                BOOL focusContentRange = ![existedTask.argv[@"from"] isEqual:NSNull.null] && [existedTask.argv[@"from"] isEqualToString:@"pptv"];
+                ZZDownloadRequestOperation *rq = [[ZZDownloadRequestOperation alloc] initWithRequest:request targetPath:targetPath shouldResume:YES forcusContentRange:focusContentRange];
+                rq.key = entity.entityKey;
+                
+#if BILITEST==1
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [[[UIAlertView alloc] initWithTitle:existedTask.key message:request.URL.absoluteString delegate:nil cancelButtonTitle:@"quxiao" otherButtonTitles: nil] show];
+
+                });
+#endif
+                [rq setProgressiveDownloadProgressBlock:^(AFDownloadRequestOperation *operation, NSInteger bytesRead, long long totalBytesRead, long long totalBytesExpected, long long totalBytesReadForFile, long long totalBytesExpectedToReadForFile){
+                    if (existedTask.state != ZZDownloadStateDownloading && existedTask.command != ZZDownloadAssignedCommandRemove) {
+                        if (bytesRead > 0) {
+                            existedTask.state = ZZDownloadStateDownloading;
+                            existedTask.command = ZZDownloadAssignedCommandNone;
+                        }
+                    }
+                    
+                    long long tmpLength = [existedTask.sectionsLengthList[i] longLongValue];
+                    for (int j = i; j < existedTask.sectionsLengthList.count; j++) {
+                        existedTask.sectionsLengthList[j] = [NSNumber numberWithLongLong:tmpLength];
+                    }
+                    existedTask.sectionsLengthList[i] = [NSNumber numberWithLongLong:totalBytesExpectedToReadForFile];
+                    existedTask.sectionsDownloadedList[i] = [NSNumber numberWithLongLong:totalBytesReadForFile];
+    //                NSLog(@"i am %@-%d,my progress = %f", existedTask.key, i,totalBytesReadForFile*1.0 / totalBytesExpectedToReadForFile);
+                }];
+                
+                [rq setCompletionBlockWithSuccess:^(AFHTTPRequestOperation *operation, id responseObject) {
+                    if (operation.response.statusCode >= 200 && operation.response.statusCode < 400 && [self videoFileValid:targetPath]) {
+                        NSLog(@"i downloaded %@-%d", existedTask.key, i);
+                        existedTask.command = ZZDownloadAssignedCommandStart;
+                        existedTask.state = ZZDownloadStateWaiting;
+                        existedTask.triedCount = 0;
+                        [self startTask:existedTask fifo:NO];
+                    } else if (operation.response.statusCode >= 400) {
+                        [[NSFileManager defaultManager] removeItemAtPath:targetPath error:NULL];
+                        existedTask.lastestError = [NSError errorWithDomain:ZZDownloadTaskErrorDomain code:ZZDownloadTaskErrorTypeHttpError userInfo:@{NSLocalizedDescriptionKey: [NSString stringWithFormat:@"task:%@ errorCode:%d -http error happened", existedTask.key, (int32_t)operation.response.statusCode]}];
+                        [self dealFailTask:existedTask];
+                    }
+                    [self notifyQueueUpdateMessage:existedTask];
+                } failure:^(AFHTTPRequestOperation *operation, NSError *error){
+                    NSLog(@"error key=%@ happened = %@",existedTask.key, error);
+                    if (error) {
+                        existedTask.lastestError = [NSError errorWithDomain:ZZDownloadTaskErrorDomain code:ZZDownloadTaskErrorTypeInterruptError userInfo:@{NSLocalizedDescriptionKey:[NSString stringWithFormat:@"task:%@ interrupted command:%d state:%d", existedTask.key, (int32_t)existedTask.command, (int32_t)existedTask.state], @"originError": error}];
+                    } else {
+                        existedTask.lastestError = [NSError errorWithDomain:ZZDownloadTaskErrorDomain code:ZZDownloadTaskErrorTypeInterruptError userInfo:@{NSLocalizedDescriptionKey:[NSString stringWithFormat:@"task:%@ interrupted command:%d state:%d", existedTask.key, (int32_t)existedTask.command, (int32_t)existedTask.state]}];
+                    }
+                    if ([error.domain isEqualToString:NSPOSIXErrorDomain]) {
+    //                    [(ZZDownloadRequestOperation *)operation deleteTempFileWithError:nil];
+    //                    [self deleteTask:existedTask];
+    //                    [self pauseAllTask];
+                        existedTask.command = ZZDownloadAssignedCommandNone;
+                        existedTask.state = ZZDownloadStateInvalid;
+                        [self notifyQueueUpdateMessage:existedTask];
+                        return;
+                    }
+                    
+                    // 暂停一个正在下载的任务也会进这
+                    NSLog(@"i was interppted %@", existedTask.key);
+                    if (existedTask.command == ZZDownloadAssignedCommandRemove) {
+    //                    [[ZZDownloadOpQueue shared] addOperationWithBlock:^{
+    //                        [self deleteTask:existedTask];
+    //                    }];
+                        dispatch_async(self.managerQueue, ^{
+                            [self deleteTask:existedTask];
+                            [self executeDownloadQueue];
+                        });
+                    } else if ((existedTask.command == ZZDownloadAssignedCommandNone || existedTask.command == ZZDownloadAssignedCommandStart) && (existedTask.state == ZZDownloadStateDownloading || existedTask.state == ZZDownloadStateWaiting)) {
+                        [self dealFailTask:existedTask];
+                    } else if (existedTask.command == ZZDownloadAssignedCommandPause && (existedTask.state == ZZDownloadStateDownloading || existedTask.state == ZZDownloadStateWaiting)){
+                        existedTask.state = ZZDownloadStateRealPaused;
+                        dispatch_async(self.managerQueue, ^{
+                            [self executeDownloadQueue];
+                        });
+                    } else if (existedTask.command == ZZDownloadAssignedCommandInterruptPaused) {
+                        existedTask.state = ZZDownloadStateInterrputPaused;
+                        dispatch_async(self.managerQueue, ^{
+                            [self executeDownloadQueue];
+                        });
+                    } else {
+                        dispatch_async(self.managerQueue, ^{
+                            [self executeDownloadQueue];
+                        });
+                    }
+                    existedTask.command = ZZDownloadAssignedCommandNone;
+                    [self notifyQueueUpdateMessage:existedTask];
+                }];
+                dispatch_sync(self.managerQueue, ^{
+                    if (yesOrNo) {
+                        [self.allDownloadRequests addObject:rq];
+                    } else {
+                        [self.allDownloadRequests insertObject:rq atIndex:0];
+                    }
                     [self executeDownloadQueue];
                 });
-            }
-            continue;
-        } else {
-            existedTask.state = ZZDownloadStateWaiting;
-            NSString *targetPath = [destinationPath stringByAppendingPathComponent:[NSString stringWithFormat:@"%d.section",i]];
-            NSUInteger totalLength = [entity getSectionTotalLengthWithCount:i];
-            existedTask.sectionsContentTime[i] = [NSNumber numberWithUnsignedInteger:totalLength];
-            NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:[entity getSectionUrlWithCount:i]]];
-            [request addValue:[NSString stringWithUTF8String:LIBAVFORMAT_IDENT] forHTTPHeaderField:@"User-Agent"];
-            BOOL focusContentRange = ![existedTask.argv[@"from"] isEqual:NSNull.null] && [existedTask.argv[@"from"] isEqualToString:@"pptv"];
-            ZZDownloadRequestOperation *rq = [[ZZDownloadRequestOperation alloc] initWithRequest:request targetPath:targetPath shouldResume:YES forcusContentRange:focusContentRange];
-            rq.key = entity.entityKey;
-            
-            [rq setProgressiveDownloadProgressBlock:^(AFDownloadRequestOperation *operation, NSInteger bytesRead, long long totalBytesRead, long long totalBytesExpected, long long totalBytesReadForFile, long long totalBytesExpectedToReadForFile){
-                if (existedTask.state != ZZDownloadStateDownloading) {
-                    if (bytesRead > 0) {
-                        existedTask.state = ZZDownloadStateDownloading;
-                        existedTask.command = ZZDownloadAssignedCommandNone;
-                    }
-                }
-                
-                long long tmpLength = [existedTask.sectionsLengthList[i] longLongValue];
-                for (int j = i; j < existedTask.sectionsLengthList.count; j++) {
-                    existedTask.sectionsLengthList[j] = [NSNumber numberWithLongLong:tmpLength];
-                }
-                existedTask.sectionsLengthList[i] = [NSNumber numberWithLongLong:totalBytesExpectedToReadForFile];
-                existedTask.sectionsDownloadedList[i] = [NSNumber numberWithLongLong:totalBytesReadForFile];
-//                NSLog(@"i am %@-%d,my progress = %f", existedTask.key, i,totalBytesReadForFile*1.0 / totalBytesExpectedToReadForFile);
-            }];
-            
-            [rq setCompletionBlockWithSuccess:^(AFHTTPRequestOperation *operation, id responseObject) {
-                if (operation.response.statusCode >= 200 && operation.response.statusCode < 400 && [self videoFileValid:targetPath]) {
-                    NSLog(@"i downloaded %@-%d", existedTask.key, i);
-                    existedTask.command = ZZDownloadAssignedCommandStart;
-                    existedTask.state = ZZDownloadStateWaiting;
-                    existedTask.triedCount = 0;
-                    [self startTask:existedTask fifo:NO];
-                } else if (operation.response.statusCode >= 400) {
-                    [[NSFileManager defaultManager] removeItemAtPath:targetPath error:NULL];
-                    existedTask.lastestError = [NSError errorWithDomain:ZZDownloadTaskErrorDomain code:ZZDownloadTaskErrorTypeHttpError userInfo:@{NSLocalizedDescriptionKey: [NSString stringWithFormat:@"task:%@ errorCode:%d -http error happened", existedTask.key, (int32_t)operation.response.statusCode]}];
-                    [self dealFailTask:existedTask];
-                }
-                [self notifyDownloadUpdateMessage];
-            } failure:^(AFHTTPRequestOperation *operation, NSError *error){
-                if (error) {
-                    existedTask.lastestError = [NSError errorWithDomain:ZZDownloadTaskErrorDomain code:ZZDownloadTaskErrorTypeInterruptError userInfo:@{NSLocalizedDescriptionKey:[NSString stringWithFormat:@"task:%@ interrupted command:%d state:%d", existedTask.key, (int32_t)existedTask.command, (int32_t)existedTask.state], @"originError": error}];
-                } else {
-                    existedTask.lastestError = [NSError errorWithDomain:ZZDownloadTaskErrorDomain code:ZZDownloadTaskErrorTypeInterruptError userInfo:@{NSLocalizedDescriptionKey:[NSString stringWithFormat:@"task:%@ interrupted command:%d state:%d", existedTask.key, (int32_t)existedTask.command, (int32_t)existedTask.state]}];
-                }
-                if ([error.domain isEqualToString:NSPOSIXErrorDomain]) {
-//                    [(ZZDownloadRequestOperation *)operation deleteTempFileWithError:nil];
-//                    [self deleteTask:existedTask];
-//                    [self pauseAllTask];
-                    existedTask.command = ZZDownloadAssignedCommandNone;
-                    existedTask.state = ZZDownloadStateInvalid;
-                    [self notifyDownloadUpdateMessage];
-                    return;
-                }
-                
-                // 暂停一个正在下载的任务也会进这
-                NSLog(@"i was interppted %@", existedTask.key);
-                if (existedTask.command == ZZDownloadAssignedCommandRemove) {
-                    [[ZZDownloadOpQueue shared] addOperationWithBlock:^{
-                        [self deleteTask:existedTask];
-                    }];
-                    dispatch_async(self.managerQueue, ^{
-                        [self executeDownloadQueue];
-                    });
-                } else if (existedTask.command == ZZDownloadAssignedCommandNone && existedTask.state == ZZDownloadStateDownloading) {
-                    [self dealFailTask:existedTask];
-                } else if (existedTask.command == ZZDownloadAssignedCommandPause && existedTask.state == ZZDownloadStateDownloading){
-                    existedTask.state = ZZDownloadStateRealPaused;
-                    dispatch_async(self.managerQueue, ^{
-                        [self executeDownloadQueue];
-                    });
-                } else if (existedTask.command == ZZDownloadAssignedCommandInterruptPaused) {
-                    existedTask.state = ZZDownloadStateInterrputPaused;
-                    dispatch_async(self.managerQueue, ^{
-                        [self executeDownloadQueue];
-                    });
-                } else {
-                    dispatch_async(self.managerQueue, ^{
-                        [self executeDownloadQueue];
-                    });
-                }
-                existedTask.command = ZZDownloadAssignedCommandNone;
-                [self notifyDownloadUpdateMessage];
-            }];
-            if (yesOrNo) {
-                [self.allDownloadRequests addObject:rq];
-            } else {
-                [self.allDownloadRequests insertObject:rq atIndex:0];
-            }
-            [self executeDownloadQueue];
             break;
         }
     }
+    });
 }
 
 - (BOOL)videoFileValid:(NSString *)filePath
@@ -405,7 +437,6 @@
 
     ZZDownloadBaseEntity *entity = [task recoverEntity];
     dispatch_async(self.managerQueue, ^{
-        sleep(2);
         [self assignDownloadSectionTask:entity fifo:fifo];
     });
 }
@@ -432,6 +463,12 @@
             if (self.runningOperation) {
                 ZZDownloadRequestOperation *op = self.allDownloadRequests[x];
                 if (![op isExecuting] && ![op isFinished]) {
+                    NSLog(@"task in queue:%@",op.key);
+#if BILITEST==1
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        [[[UIAlertView alloc] initWithTitle:@"下载中" message:op.key delegate:nil cancelButtonTitle:@"quxiao" otherButtonTitles: nil] show];
+                    });
+#endif
                     [[ZZDownloadUrlConnectionQueue shared] addOperation:self.allDownloadRequests[x]];
                     if ([self.runningOperation isPaused]) {
                         [self.runningOperation resume];
@@ -483,9 +520,10 @@
     }
     task.state = ZZDownloadStateWaiting;
     task.triedCount = 0;
-    [task.sectionsDownloadedList removeAllObjects];
-    [task.sectionsLengthList removeAllObjects];
-    [task.sectionsContentTime removeAllObjects];
+    task.sectionsDownloadedList = [NSMutableArray array];
+    task.sectionsLengthList = [NSMutableArray array];
+    task.sectionsContentTime = [NSMutableArray array];
+    
     ZZDownloadBaseEntity *entity = [task recoverEntity];
     NSString *destinationPath = [[ZZDownloadTaskManager downloadFolder] stringByAppendingPathComponent:[entity destinationDirPath]];
     NSError *error;
@@ -603,25 +641,32 @@
             for (ZZDownloadRequestOperation *op in tmpList) {
                 [self.allDownloadRequests removeObject:op];
             }
-            [[ZZDownloadOpQueue shared] addOperationWithBlock:^{
+//            [[ZZDownloadOpQueue shared] addOperationWithBlock:^{
                 [self deleteTask:task];
-            }];
+//            }];
         });
     }
     if ([task.key isEqualToString:self.runningOperation.key]) {
-//        scheduled = YES;
+        if ([self.runningOperation isExecuting] &&![self.runningOperation isPaused]) {
         // 由于调pause方法会导致operation堵塞住、然后又需要断点须传所以调用他私有方法更新断点头部
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wundeclared-selector"
-        if ([self.runningOperation respondsToSelector:@selector(updateByteStartRangeForRequest)]) {
-            [self.runningOperation performSelector:@selector(updateByteStartRangeForRequest)];
-        }
+            if ([self.runningOperation respondsToSelector:@selector(updateByteStartRangeForRequest)]) {
+                [self.runningOperation performSelector:@selector(updateByteStartRangeForRequest)];
+            }
 #pragma clang diagnostic pop
-        // 通过cancel方法触发opertaion的fail
-        [self.runningOperation cancel];
+            // 通过cancel方法触发opertaion的fail
+            [self.runningOperation cancel];
+        } else {
+            dispatch_async(self.managerQueue, ^{
+                [self executeDownloadQueue];
+            });
+        }
     }
     if (!scheduled) {
-        [self deleteTask:self.allTaskDict[task.key]];
+        dispatch_async(self.managerQueue, ^{
+            [self deleteTask:self.allTaskDict[task.key]];
+        });
     }
 }
 
@@ -642,6 +687,13 @@
     message.task = task;
    
     [[ZZDownloadNotifyManager shared] addOp:message];
+    
+    ZZDownloadMessage *message2 = [[ZZDownloadMessage alloc] init];
+    message2.key = task.key;
+    message2.command = ZZDownloadMessageCommandNeedNotifyUI;
+    message2.task = task;
+    
+    [[ZZDownloadNotifyManager shared] addOp:message2];
 }
 
 - (void)watchDog
@@ -650,8 +702,10 @@
     if (x != self.couldDownload) {
         if (x) {
             [self resumeAllTask];
+
         } else {
             [self pauseAllTask];
+
         }
         NSLog(@"watch dog awake");
         NSLog(@"I found netword changed origin:%d new:%d",self.couldDownload, x);
@@ -669,16 +723,26 @@
     double totalBytes = [[self class] freeDiskSpaceInBytes];
     float mb = totalBytes/1024/1024;
     NSLog(@"remain Bytes: %f", mb);
-    if (mb < 500) {
+    if (mb < 300 && mb >= 100) {
         NSLog(@"watch dog awake");
-        NSLog(@"error space error space error !");
+        NSLog(@"warning space warning space warning !");
         NSLog(@"wo!wo!wo!");
+        if (self.runningOperation) {
+            ZZDownloadMessage *message = [ZZDownloadMessage new];
+            message.command = ZZDownloadMessageCommandNotifyDiskWarning;
+            [[ZZDownloadNotifyManager shared] addOp:message];
+        }
     }
-    if (mb < 200) {
+    if (mb < 100) {
         [self pauseAllTask];
         NSLog(@"watch dog awake");
         NSLog(@"error space error space error !");
         NSLog(@"wo!wo!wo!");
+        if (self.runningOperation) {
+            ZZDownloadMessage *message = [ZZDownloadMessage new];
+            message.command = ZZDownloadMessageCommandNotifyDiskBakuhatu;
+            [[ZZDownloadNotifyManager shared] addOp:message];
+        }
     }
 }
 
@@ -755,18 +819,24 @@
 - (void)resumeAllTask
 {
     dispatch_async(self.managerQueue, ^{
+        __block BOOL dealed = NO;
         [self.allTaskDict enumerateKeysAndObjectsUsingBlock:^(NSString* key, ZZDownloadTask *value, BOOL *stop) {
             if (value.state != ZZDownloadStateInterrputPaused) {
                 return;
             }
+            dealed = YES;
             ZZDownloadBaseEntity *entity = [value recoverEntity];
             ZZDownloadOperation *operation = [[ZZDownloadOperation alloc] init];
             operation.command = ZZDownloadCommandStart;
             operation.key = [entity entityKey];
             [self addOp:operation withEntity:entity block:nil];
         }];
+        if (dealed) {
+            ZZDownloadMessage *message = [ZZDownloadMessage new];
+            message.command = ZZDownloadMessageCommandNotifyNetworkChangedResume;
+            [[ZZDownloadNotifyManager shared] addOp:message];
+        }
     });
-
 }
 
 - (void)pauseAllTask
@@ -780,6 +850,11 @@
             [self addOp:operation withEntity:entity block:nil];
         }];
     });
+    if (self.runningOperation) {
+        ZZDownloadMessage *message = [ZZDownloadMessage new];
+        message.command = ZZDownloadMessageCommandNotifyNetWorkChangedInterrupt;
+        [[ZZDownloadNotifyManager shared] addOp:message];
+    }
 
 }
 

@@ -9,7 +9,7 @@
 #import <Foundation/Foundation.h>
 #import "ZZDownloadTask.h"
 #import "ZZDownloadBaseEntity.h"
-@interface ZZDownloadTaskInfo : NSObject
+@interface ZZDownloadTaskInfo : NSObject <NSCopying>
 
 @property (nonatomic) ZZDownloadState state;
 @property (nonatomic) ZZDownloadAssignedCommand command;
@@ -20,9 +20,12 @@
 @property (nonatomic) NSError *lastestError;
 @property (nonatomic) int32_t triedCount;
 
-@property (nonatomic) NSMutableArray *sectionsLengthList;
-@property (nonatomic) NSMutableArray *sectionsDownloadedList;
-@property (nonatomic) NSMutableArray *sectionsContentTime;
+//used for ui
+@property (nonatomic) NSInteger index;
+
+@property (nonatomic) NSArray *sectionsLengthList;
+@property (nonatomic) NSArray *sectionsDownloadedList;
+@property (nonatomic) NSArray *sectionsContentTime;
 
 - (long long)getTotalLength;
 - (long long)getDownloadedLength;
@@ -31,4 +34,16 @@
 
 // used for recover entity
 - (ZZDownloadBaseEntity *)recoverEntity;
+
+- (NSString *)getUILabelText;
+
+// 0 nothing(invalid button)
+// 1 start command
+// 2 pause command
+// 3 play command
+- (int8_t)getPressedCommand;
+- (BOOL)isDownloaded;
+- (BOOL)allowRemove;
+- (BOOL)isPostiveState;
+
 @end

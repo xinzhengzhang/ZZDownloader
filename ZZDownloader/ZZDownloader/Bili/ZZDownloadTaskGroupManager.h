@@ -3,7 +3,7 @@
 //  ibiliplayer
 //
 //  Created by zhangxinzheng on 11/26/14.
-//  Copyright (c) 2014 Zhang Rui. All rights reserved.
+//  Copyright (c) 2014 zhangxinzheng. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>

@@ -9,6 +9,7 @@
 #import "BiliDownloadManager.h"
 #import "ZZDownloadOperation.h"
 #import <Mantle/Mantle.h>
+#import "ZZDownloadTaskManagerV2.h"
 
 @implementation BiliDownloadManager
 
@@ -32,7 +33,7 @@
     operation.command = ZZDownloadCommandStart;
     operation.key = [epEntity entityKey];
     
-    [[ZZDownloadTaskManager shared] addOp:operation withEntity:epEntity block:nil];
+    [[ZZDownloadTaskManagerV2 shared] addOp:operation withEntity:epEntity block:nil];
 }
 
 - (void)pauseEpTaskWithEpId:(NSString *)ep_id
@@ -44,7 +45,7 @@
     operation.command = ZZDownloadCommandStop;
     operation.key = [epEntity entityKey];
     
-    [[ZZDownloadTaskManager shared] addOp:operation withEntity:epEntity block:nil];
+    [[ZZDownloadTaskManagerV2 shared] addOp:operation withEntity:epEntity block:nil];
 }
 
 - (void)removeEpTaskWithEpId:(NSString *)ep_id
@@ -56,7 +57,7 @@
     operation.command = ZZDownloadCommandRemove;
     operation.key = [epEntity entityKey];
     
-    [[ZZDownloadTaskManager shared] addOp:operation withEntity:epEntity block:nil];
+    [[ZZDownloadTaskManagerV2 shared] addOp:operation withEntity:epEntity block:nil];
 }
 
 - (void)checkEpTaskWithEpId:(NSString *)ep_id withCompletationBlock:(void (^)(ZZDownloadTaskInfo *))block
@@ -68,7 +69,7 @@
     operation.command = ZZDownloadCommandCheck;
     operation.key = [epEntity entityKey];
     
-    [[ZZDownloadTaskManager shared] addOp:operation withEntity:epEntity block:block];
+    [[ZZDownloadTaskManagerV2 shared] addOp:operation withEntity:epEntity block:block];
 }
 
 - (void)startAVTaskWithAvId:(BiliDownloadAVEntity *)avEntity
@@ -81,7 +82,7 @@
     operation.command = ZZDownloadCommandStart;
     operation.key = [avEntity entityKey];
     
-    [[ZZDownloadTaskManager shared] addOp:operation withEntity:avEntity block:nil];
+    [[ZZDownloadTaskManagerV2 shared] addOp:operation withEntity:avEntity block:nil];
 }
 
 - (void)pauseAVTaskWithAvId:(NSString *)av_id page:(int32_t)page
@@ -94,7 +95,7 @@
     operation.command = ZZDownloadCommandStop;
     operation.key = [avEntity entityKey];
     
-    [[ZZDownloadTaskManager shared] addOp:operation withEntity:avEntity block:nil];
+    [[ZZDownloadTaskManagerV2 shared] addOp:operation withEntity:avEntity block:nil];
 }
 
 - (void)removeAVTaskWithAvId:(NSString *)av_id page:(int32_t)page
@@ -107,7 +108,7 @@
     operation.command = ZZDownloadCommandRemove;
     operation.key = [avEntity entityKey];
     
-    [[ZZDownloadTaskManager shared] addOp:operation withEntity:avEntity block:nil];
+    [[ZZDownloadTaskManagerV2 shared] addOp:operation withEntity:avEntity block:nil];
 
 }
 
@@ -121,7 +122,7 @@
     operation.command = ZZDownloadCommandCheck;
     operation.key = [avEntity entityKey];
     
-    [[ZZDownloadTaskManager shared] addOp:operation withEntity:avEntity block:block];
+    [[ZZDownloadTaskManagerV2 shared] addOp:operation withEntity:avEntity block:block];
 
 }
 
@@ -133,7 +134,7 @@
     ZZDownloadOperation *operation = [[ZZDownloadOperation alloc] init];
     operation.command = ZZDownloadCommandCheckGroup;
     
-    [[ZZDownloadTaskManager shared] addOp:operation withEntity:avEntity block:block];
+    [[ZZDownloadTaskManagerV2 shared] addOp:operation withEntity:avEntity block:block];
 }
 
 - (void)resumeAllTask
@@ -141,7 +142,7 @@
     ZZDownloadOperation *operation = [[ZZDownloadOperation alloc] init];
     operation.command = ZZDownloadCommandResumeAll;
     
-    [[ZZDownloadTaskManager shared] addOp:operation withEntity:nil block:nil];
+    [[ZZDownloadTaskManagerV2 shared] addOp:operation withEntity:nil block:nil];
 }
 
 - (void)pauseAllTask
@@ -149,7 +150,7 @@
     ZZDownloadOperation *operation = [[ZZDownloadOperation alloc] init];
     operation.command = ZZDownloadCommandPauseAll;
     
-    [[ZZDownloadTaskManager shared] addOp:operation withEntity:nil block:nil];
+    [[ZZDownloadTaskManagerV2 shared] addOp:operation withEntity:nil block:nil];
 }
 
 - (void)checkAllGroupWithCompletationBlock:(void (^)(NSArray *))block
@@ -157,7 +158,8 @@
     ZZDownloadOperation *operation = [[ZZDownloadOperation alloc] init];
     operation.command  = ZZDownloadCommandCheckAllGroup;
     
-    [[ZZDownloadTaskManager shared] addOp:operation withEntity:nil block:block];
+    [[ZZDownloadTaskManagerV2 shared] addOp:operation withEntity:nil block:block];
 }
+
 
 @end

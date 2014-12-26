@@ -19,7 +19,8 @@ typedef NS_ENUM(NSUInteger, ZZDownloadCommand) {
     ZZDownloadCommandResumeAll,
     ZZDownloadCommandPauseAll,
     ZZDownloadCommandCheckAllGroup,
-    ZZDownloadCommandCheckGroup
+    ZZDownloadCommandCheckGroup,
+    ZZDownloadCommandCheckSelfUnSecheduledTask
 };
 
 @interface ZZDownloadOperation : NSObject

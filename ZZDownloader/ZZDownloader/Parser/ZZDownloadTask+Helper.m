@@ -10,16 +10,17 @@
 
 @implementation ZZDownloadTask (Helper)
 
-- (ZZDownloadBaseEntity *)recoverEntity
-{
-    NSString *type = self.entityType;
-    if ([ZZDownloadValidEntity containsObject:type]) {
-        Class class = NSClassFromString(type);
-        ZZDownloadBaseEntity *entity = [[class alloc] init];
-        [entity setValuesForKeysWithDictionary:self.argv];
-        return entity;
-    }
-    return nil;
-}
+//- (ZZDownloadBaseEntity *)recoverEntity
+//{
+//    NSString *type = self.entityType;
+//    if ([ZZDownloadValidEntity containsObject:type]) {
+//        Class class = NSClassFromString(type);
+//        NSLog(@"-=-%@",type);
+//        ZZDownloadBaseEntity *entity = [[class alloc] init];
+//        [entity setValuesForKeysWithDictionary:self.argv];
+//        return entity;
+//    }
+//    return nil;
+//}
 
 @end

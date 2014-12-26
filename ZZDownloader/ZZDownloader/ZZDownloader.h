@@ -8,6 +8,9 @@
 
 #import "BiliDownloadManager.h"
 #import "EXTScope.h"
+#import "ZZDownloadTaskCFNetworkOperation.h"
+#import "ZZDownloadBackgroundSessionManager.h"
+#define ZZDownloadQueueAssert(x) NSAssert([[[NSOperationQueue currentQueue] name] isEqualToString:x], x);
 
 @interface ZZDownloader : NSObject
 

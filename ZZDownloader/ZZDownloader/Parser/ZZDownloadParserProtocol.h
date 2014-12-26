@@ -22,6 +22,7 @@ typedef NS_ENUM(NSUInteger, ZZDownloadEntityType) {
 - (NSString *)realKey;
 - (NSString *)aggregationType;
 - (NSString *)title;
+- (NSString *)aggregationTitle;
 - (NSString *)getTypeTag:(BOOL)focusUpdate;
 - (NSString *)destinationDirPath;
 - (NSString *)destinationRootDirPath;

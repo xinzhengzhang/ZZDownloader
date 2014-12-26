@@ -17,6 +17,7 @@
     dispatch_once(&onceToken, ^{
         queue = [[ZZDownloadNotifyQueue alloc] init];
         queue.maxConcurrentOperationCount = 1;
+        queue.name = ZZDownloadNotifyQueueName;
     });
     return queue;
 }

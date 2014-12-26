@@ -21,8 +21,21 @@ NSString * const ZZDownloadTaskErrorDomain = @"ZZDownloadTaskErrorDomain";
     if (self = [super init]) {
         self.command = ZZDownloadAssignedCommandNone;
         self.state = ZZDownloadStateNothing;
+        self.taskArrangeType = ZZDownloadTaskArrangeTypeUnArranged;
     }
     return self;
+}
+
+- (ZZDownloadBaseEntity *)recoverEntity
+{
+    volatile NSString *type = self.entityType;
+    if ([ZZDownloadValidEntity containsObject:type]) {
+        Class class = NSClassFromString((NSString *)type);
+        ZZDownloadBaseEntity *entity = [[class alloc] init];
+        [entity setValuesForKeysWithDictionary:self.argv];
+        return entity;
+    }
+    return nil;
 }
 
 - (NSMutableArray *)sectionsDownloadedList
@@ -90,8 +103,13 @@ NSString * const ZZDownloadTaskErrorDomain = @"ZZDownloadTaskErrorDomain";
         if (self.state == ZZDownloadStateFail ) {
             self.triedCount += 1;
         }
+        if (self.state == ZZDownloadStateInvalid) {
+            self.triedCount = 0;
+            self.state = ZZDownloadStateNothing;
+        }
         if (self.state == ZZDownloadStateNothing|| self.state == ZZDownloadStateFail || self.state == ZZDownloadStateRealPaused || self.state == ZZDownloadStateWaiting || self.state == ZZDownloadStateRemoved || self.state == ZZDownloadStateInterrputPaused) {
             self.command = ZZDownloadAssignedCommandStart;
+            self.state = ZZDownloadStateWaiting;
             block();
         }
     }
@@ -100,7 +118,7 @@ NSString * const ZZDownloadTaskErrorDomain = @"ZZDownloadTaskErrorDomain";
 - (void)pauseWithPauseSuccessBlock:(void (^)(void))block ukeru:(BOOL)ukeru
 {
     if (self.command != ZZDownloadAssignedCommandPause && self.command != ZZDownloadAssignedCommandRemove) {
-        if (self.state == ZZDownloadStateWaiting || self.state == ZZDownloadStateDownloading || self.state == ZZDownloadStateNothing || self.state == ZZDownloadStateParsing || self.state == ZZDownloadStateDownloadingCover || self.state == ZZDownloadStateDownloadingDanmaku) {
+        if (self.state == ZZDownloadStateWaiting || self.state == ZZDownloadStateDownloading || self.state == ZZDownloadStateNothing || self.state == ZZDownloadStateParsing || self.state == ZZDownloadStateDownloadingCover || self.state == ZZDownloadStateDownloadingDanmaku || self.state == ZZDownloadStateFail) {
             if (ukeru) {
                 self.command = ZZDownloadAssignedCommandInterruptPaused;
             } else {

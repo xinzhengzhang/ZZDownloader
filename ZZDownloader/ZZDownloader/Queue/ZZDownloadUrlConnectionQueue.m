@@ -16,7 +16,9 @@
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         queue = [[ZZDownloadUrlConnectionQueue alloc] init];
-        queue.maxConcurrentOperationCount = 1;
+        queue.name = ZZDownloadUrlConnectionQueueName;
+        queue.maxConcurrentOperationCount = 4;
+//        queue.maxConcurrentOperationCount = 4;
     });
     return queue;
 }

@@ -8,6 +8,8 @@
 
 #import <Foundation/Foundation.h>
 
+#define ZZDownloadOpQueueName @"ZZDownloadOpQueue"
+
 @interface ZZDownloadOpQueue : NSOperationQueue
 + (id) shared;
 @end
