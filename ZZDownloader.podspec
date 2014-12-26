@@ -3,7 +3,7 @@ Pod::Spec.new do |s|
   s.version        = '0.0.1'
   s.summary        = "ZZDownloader"
   s.homepage       = "https://github.com/xinzhengzhang/ZZDownloader"
-  s.source         = { :git => "https://github.com/xinzhengzhang/ZZDownloader.git", :tag => "0.0.1"}
+  s.source         = { :git => "https://github.com/xinzhengzhang/ZZDownloader.git", :tag => "0.0.2"}
   s.author         = { 'zxz' => 'zhangxzheng@gmail.com' }
   s.ios.deployment_target = '6.0'
   s.requires_arc   = true
@@ -27,6 +27,10 @@ Pod::Spec.new do |s|
 
    s.subspec 'Queue' do |ss|
 	ss.source_files = 'ZZDownloader/ZZDownloader/Queue/*.{h,m}'
+  end
+   
+  s.subspec 'Operation' do |ss|
+	ss.source_files = 'ZZDownloader/ZZDownloader/Operation/*.{h,m}'
   end
 
  s.public_header_files = 'ZZDownloader/ZZDownloader/*.h'
