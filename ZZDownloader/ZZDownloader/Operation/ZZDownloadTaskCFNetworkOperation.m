@@ -153,17 +153,17 @@
     BOOL parseSeccuess = [entity updateSelf];
     if (parseSeccuess) {
         int32_t sectionCount = [entity getSectionCount];
-        if (![entity isValid:self.downloadTask]) {
-            [self.delegate updateTaskWithBlock:^{
+        [self.delegate updateTaskWithBlock:^{
+            if (![entity isValid:self.downloadTask]) {
                 [self overdueTask];
                 for (int i = 0; i < sectionCount; i++) {
                     [self.downloadTask.sectionsDownloadedList addObject:[NSNumber numberWithLongLong:0]];
                     [self.downloadTask.sectionsLengthList addObject:[NSNumber numberWithLongLong:0]];
                     [self.downloadTask.sectionsContentTime addObject:[NSNumber numberWithUnsignedInteger:0]];
                 }
-                self.downloadTask.argv = [MTLJSONAdapter JSONDictionaryFromModel:entity];
-            }];
-        }
+            }
+            self.downloadTask.argv = [MTLJSONAdapter JSONDictionaryFromModel:entity];
+        }];
         [entity downloadDanmakuWithDownloadStartBlock:^{
             self.downloadTask.state = ZZDownloadStateDownloadingDanmaku;
         }];

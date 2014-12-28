@@ -110,7 +110,7 @@
 
 - (BOOL)updateSelf
 {
-
+    return YES;
 }
 
 - (BOOL)isValid:(ZZDownloadTask *)task

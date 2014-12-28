@@ -60,7 +60,9 @@
 - (int32_t)addCacheTaskByTask:(ZZDownloadTask *)task
 {
     ZZDownloadBaseEntity *entity = [task recoverEntity];
-    [entity updateSelf];
+    if ([entity updateSelf]) {
+        task.argv = [MTLJSONAdapter JSONDictionaryFromModel:entity];
+    }
     NSString *needTypeTag = [entity uniqueKey];
     int32_t sectionCount = [entity getSectionCount];
     
