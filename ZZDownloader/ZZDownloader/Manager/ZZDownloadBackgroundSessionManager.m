@@ -60,8 +60,8 @@
 - (int32_t)addCacheTaskByTask:(ZZDownloadTask *)task
 {
     ZZDownloadBaseEntity *entity = [task recoverEntity];
-    
-    NSString *needTypeTag = [entity getTypeTag:YES];
+    [entity updateSelf];
+    NSString *needTypeTag = [entity uniqueKey];
     int32_t sectionCount = [entity getSectionCount];
     
     int32_t added = 0;

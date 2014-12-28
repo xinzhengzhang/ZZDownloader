@@ -119,33 +119,71 @@ static NSRecursiveLock *lock;
     return [NSString stringWithFormat:@"av_%@_%d", av_id, page];
 }
 
-- (NSString *)getTypeTag:(BOOL)focusUpdate
+//- (NSString *)getTypeTag:(BOOL)focusUpdate
+//{
+//    if (focusUpdate || !self.typeTag || [self.typeTag isEqual:NSNull.null]) {
+////        BiliPlayerConfig *cfg = [BiliPlayerConfig sharedConfig];
+////        BILI_DOWNLOAD_SOURCE x = YES;
+////        if (cfg.preferHighQualityMedia) {
+////            x = BILI_DOWNLOAD_SOURCE_HIGHQUALITY;
+////        }
+////        else {
+////            x = BILI_DOWNLOAD_SOURCE_LOWQUALITY;
+////        }
+////        BiliVideoSource *videoSource = [BiliVideoResolver mediaSourceForDownloadOfAVID:self.av_id subPage:self.page andSource:x andTypeTag:nil];
+////        if (videoSource) {
+////            self.typeTag = [videoSource tag];
+////#if BILITEST==1
+////            [self writelog: [NSString stringWithFormat:@"\ntask:%@ assignTypetag:%@",self.entityKey,self.typeTag]];
+////#endif
+////        }
+//        return self.typeTag;
+//    } else {
+//        return self.typeTag;
+//    }
+//}
+
+- (BOOL)updateSelf
 {
-    if (focusUpdate || !self.typeTag || [self.typeTag isEqual:NSNull.null]) {
-//        BiliPlayerConfig *cfg = [BiliPlayerConfig sharedConfig];
-//        BILI_DOWNLOAD_SOURCE x = YES;
-//        if (cfg.preferHighQualityMedia) {
-//            x = BILI_DOWNLOAD_SOURCE_HIGHQUALITY;
-//        }
-//        else {
-//            x = BILI_DOWNLOAD_SOURCE_LOWQUALITY;
-//        }
-//        BiliVideoSource *videoSource = [BiliVideoResolver mediaSourceForDownloadOfAVID:self.av_id subPage:self.page andSource:x andTypeTag:nil];
-//        if (videoSource) {
-//            self.typeTag = [videoSource tag];
+//    BiliPlayerConfig *cfg = [BiliPlayerConfig sharedConfig];
+//    BILI_DOWNLOAD_SOURCE x = YES;
+//    if (cfg.preferHighQualityMedia) {
+//        x = BILI_DOWNLOAD_SOURCE_HIGHQUALITY;
+//    }
+//    else {
+//        x = BILI_DOWNLOAD_SOURCE_LOWQUALITY;
+//    }
+//    BiliVideoSource *videoSource = [BiliVideoResolver mediaSourceForDownloadOfAVID:self.av_id subPage:self.page andSource:x andTypeTag:nil];
+//    if (videoSource) {
+//        self.typeTag = [videoSource tag];
 //#if BILITEST==1
-//            [self writelog: [NSString stringWithFormat:@"\ntask:%@ assignTypetag:%@",self.entityKey,self.typeTag]];
+//        [self writelog: [NSString stringWithFormat:@"\ntask:%@ assignTypetag:%@",self.entityKey,self.typeTag]];
 //#endif
-//        }
-        return self.typeTag;
-    } else {
-        return self.typeTag;
+//    }
+    return YES;
+
+}
+
+- (BOOL)isValid:(ZZDownloadTask *)task
+{
+    int32_t sectionCount = [self getSectionCount];
+    BOOL x1 = task.sectionsLengthList.count == sectionCount;
+    BOOL x2 = task.sectionsDownloadedList.count == sectionCount;
+    BOOL x3 = (task.argv[@"typeTag"] != NSNull.null) && [task.argv[@"typeTag"] isEqualToString:self.typeTag];
+    if (!x1 || !x2 || !x3) {
+        return NO;
     }
+    return YES;
+}
+
+- (NSString *)uniqueKey
+{
+    return self.typeTag;
 }
 
 - (NSString *)destinationDirPath
 {
-    return [NSString stringWithFormat:@"av/%@/%d/%@", self.av_id, (int32_t)self.page, [self getTypeTag:NO]];
+    return [NSString stringWithFormat:@"av/%@/%d/%@", self.av_id, (int32_t)self.page, self.typeTag];
 }
 
 - (NSString *)getSectionUrlWithCount:(NSInteger)index

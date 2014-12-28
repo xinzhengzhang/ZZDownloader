@@ -149,26 +149,21 @@
     ZZDownloadBaseEntity *entity = [self.downloadTask recoverEntity];
     ZZDownloadState ts = self.downloadTask.state;
     self.downloadTask.state = ZZDownloadStateParsing;
-
-    NSString *needTypeTag = [entity getTypeTag:YES];
-    int32_t sectionCount = [entity getSectionCount];
     
-    BOOL parseSeccuess = sectionCount != 0;
+    BOOL parseSeccuess = [entity updateSelf];
     if (parseSeccuess) {
-        BOOL x1 = self.downloadTask.sectionsLengthList.count == sectionCount;
-        BOOL x2 = self.downloadTask.sectionsDownloadedList.count == sectionCount;
-        BOOL x3 = (self.downloadTask.argv[@"typeTag"] != NSNull.null) && [self.downloadTask.argv[@"typeTag"] isEqualToString:needTypeTag];
-        [self.delegate updateTaskWithBlock:^{
-            if (!x1 || !x2 || !x3) {
+        int32_t sectionCount = [entity getSectionCount];
+        if (![entity isValid:self.downloadTask]) {
+            [self.delegate updateTaskWithBlock:^{
                 [self overdueTask];
                 for (int i = 0; i < sectionCount; i++) {
                     [self.downloadTask.sectionsDownloadedList addObject:[NSNumber numberWithLongLong:0]];
                     [self.downloadTask.sectionsLengthList addObject:[NSNumber numberWithLongLong:0]];
                     [self.downloadTask.sectionsContentTime addObject:[NSNumber numberWithUnsignedInteger:0]];
                 }
-            }
-            self.downloadTask.argv = [MTLJSONAdapter JSONDictionaryFromModel:entity];
-        }];
+                self.downloadTask.argv = [MTLJSONAdapter JSONDictionaryFromModel:entity];
+            }];
+        }
         [entity downloadDanmakuWithDownloadStartBlock:^{
             self.downloadTask.state = ZZDownloadStateDownloadingDanmaku;
         }];
@@ -194,18 +189,18 @@
                 NSUInteger totalLength = [entity getSectionTotalLengthWithCount:i];
                 self.downloadTask.sectionsContentTime[i] = [NSNumber numberWithUnsignedInteger:totalLength];
                 BOOL success = NO;
-                NSString *tempBgCache = [self bgCachedPath:i typeTag:needTypeTag];
+                NSString *tempBgCache = [self bgCachedPath:i typeTag:[entity uniqueKey]];
                 if (tempBgCache) {
                     success = [self transferSection:i tempPath:tempBgCache];
                 }
                 if (!success) {
                     self.downloadTask.state = ZZDownloadStateWaiting;
                     success = [self downloadSection:i];
-                    tempBgCache = [self bgCachedPath:i typeTag:needTypeTag];
+                    tempBgCache = [self bgCachedPath:i typeTag:[entity uniqueKey]];
                     if (tempBgCache) {
                         [self.fileManager removeItemAtPath:tempBgCache error:nil];
                     } else if (success){
-                        [[ZZDownloadBackgroundSessionManager shared] removeCacheTaskByTask:self.downloadTask section:i typeTag:needTypeTag];
+                        [[ZZDownloadBackgroundSessionManager shared] removeCacheTaskByTask:self.downloadTask section:i typeTag:[entity uniqueKey]];
                     }
                 }
                 if (success) {

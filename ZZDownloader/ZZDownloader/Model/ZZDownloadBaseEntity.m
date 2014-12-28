@@ -50,12 +50,6 @@
     return @"";
 }
 
-- (NSString *)getTypeTag:(BOOL)focusUpdate
-{
-    NSAssert(nil, @"sub class has not implement ZZDownloadBaseEntity");
-    return @"";
-}
-
 - (NSString *)entityType
 {
     NSAssert(nil, @"sub class has not implement ZZDownloadBaseEntity");
@@ -102,10 +96,25 @@
     return 0;
 }
 
+- (NSString *)uniqueKey
+{
+    NSAssert(nil, @"sub class has not implement ZZDownloadBaseEntity");
+    return @"";
+}
+
 - (NSString *)destinationRootDirPath
 {
     NSAssert(nil, @"sub class has not implement ZZDownloadBaseEntity");
     return @"";
 }
 
+- (BOOL)updateSelf
+{
+
+}
+
+- (BOOL)isValid:(ZZDownloadTask *)task
+{
+    return YES;
+}
 @end

@@ -10,6 +10,8 @@
 #import <Mantle/Mantle.h>
 #import "ZZDownloadBaseEntity.h"
 
+@class ZZDownloadBaseEntity;
+
 #define ZZDownloadValidEntity @[@"BiliDownloadAVEntity", @"BiliDownloadEpEntity"]
 
 typedef NS_ENUM(NSUInteger, ZZDownloadState) {

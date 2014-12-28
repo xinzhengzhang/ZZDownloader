@@ -7,11 +7,13 @@
 //
 
 #import <Foundation/Foundation.h>
-
+#import "ZZDownloadTask.h"
 typedef NS_ENUM(NSUInteger, ZZDownloadEntityType) {
     ZZDownloadEntityTypeNormal = 2333,
     ZZDownloadEntityTypePPTV
 };
+
+@class ZZDownloadTask;
 
 @protocol ZZDownloadParserProtocol <NSObject>
 
@@ -23,7 +25,9 @@ typedef NS_ENUM(NSUInteger, ZZDownloadEntityType) {
 - (NSString *)aggregationType;
 - (NSString *)title;
 - (NSString *)aggregationTitle;
-- (NSString *)getTypeTag:(BOOL)focusUpdate;
+- (NSString *)uniqueKey;
+- (BOOL)updateSelf;
+- (BOOL)isValid:(ZZDownloadTask *)task;
 - (NSString *)destinationDirPath;
 - (NSString *)destinationRootDirPath;
 - (int32_t)getSectionCount;
