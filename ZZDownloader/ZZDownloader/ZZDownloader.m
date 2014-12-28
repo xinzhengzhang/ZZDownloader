@@ -8,7 +8,6 @@
 
 #import <Foundation/Foundation.h>
 #import "ZZDownloader.h"
-#import "ZZDownloadTaskManager.h"
 #import "ZZDownloadNotifyManager.h"
 #import "ZZDownloadTaskGroupManager.h"
 //#import "BiliPlayerConfig.h"

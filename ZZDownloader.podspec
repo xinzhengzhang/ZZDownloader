@@ -53,4 +53,5 @@ Pod::Spec.new do |s|
   s.dependency   'Mantle'
   s.dependency   'libextobjc'
   s.dependency   'SVProgressHUD'
+  s.dependency   'Reachability'
 end

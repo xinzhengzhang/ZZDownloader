@@ -67,6 +67,23 @@ NSString * const ZZDownloadTaskErrorDomain = @"ZZDownloadTaskErrorDomain";
     return [self.sectionsContentTime copy];
 }
 
+- (ZZDownloadTask *)deepCopy
+{
+    ZZDownloadTask *task = [[ZZDownloadTask alloc] init];
+    task.state = self.state;
+    task.command = self.command;
+    task.key = self.key;
+    task.entityType = self.entityType;
+    task.taskArrangeType = self.taskArrangeType;
+    task.weight = self.weight;
+    task.argv = [NSDictionary dictionaryWithDictionary:self.argv];
+    task.lastestError = self.lastestError;
+    task.sectionsDownloadedList = [NSMutableArray arrayWithArray:self.sectionsDownloadedList];
+    task.sectionsContentTime = [NSMutableArray arrayWithArray:self.sectionsContentTime];
+    task.sectionsLengthList = [NSMutableArray arrayWithArray:self.sectionsLengthList];
+    return task;
+}
+
 - (long long)getTotalLength
 {
     long long t = 0;

@@ -8,7 +8,6 @@
 
 #import "ZZDownloadNotifyManager.h"
 #import "ZZDownloadNotifyQueue.h"
-#import "ZZDownloadTaskManager.h"
 #import "EXTScope.h"
 #import "ZZDownloadTask+Helper.h"
 #import "ZZDownloadTaskInfo.h"
@@ -66,38 +65,38 @@ NSString * const ZZDownloadTaskNetWorkChangedResumeNotification = @"ZZDownloadTa
 
 - (void)addOp:(ZZDownloadMessage *)message
 {
-        [self performSelector:@selector(doOp:) onThread:self.notifyThread withObject:message waitUntilDone:NO modes:[self.runLoopModes allObjects]];
-//    __block ZZDownloadMessage *x = message;
-//        [[ZZDownloadNotifyQueue shared] addOperationWithBlock:^{
-//            [self doOp:x];
-//        }];
+    [self performSelector:@selector(doOp:) onThread:self.notifyThread withObject:message waitUntilDone:NO modes:[self.runLoopModes allObjects]];
+    //    __block ZZDownloadMessage *x = message;
+    //        [[ZZDownloadNotifyQueue shared] addOperationWithBlock:^{
+    //            [self doOp:x];
+    //        }];
 }
 
 - (void)doOp:(ZZDownloadMessage *)message
 {
-//    ZZDownloadQueueAssert(ZZDownloadNotifyQueueName);
+    //    ZZDownloadQueueAssert(ZZDownloadNotifyQueueName);
     @autoreleasepool {
-    if (message.command == ZZDownloadMessageCommandNeedBuild) {
-        [self buildAllTaskInfo];
-        return;
-    }
-    if (message.command == ZZDownloadMessageCommandNeedUpdateInfo) {
-        [self updateInfoWithTask:message.task];
-    } else if (message.command == ZZDownloadMessageCommandNeedNotifyUI) {
-        [self notifyUi:message.key withCompletationBlock:nil];
-    } else if (message.command == ZZDownloadMessageCommandNeedNotifyUIByCheck) {
-        [self notifyUi:message.key withCompletationBlock:message.block];
-    } else if (message.command == ZZDownloadMessageCommandRemoveTaskInfo) {
-        [self removeTaskInfo:message.key];
-    } else if (message.command == ZZDownloadMessageCommandNotifyDiskWarning) {
-        [self notifyWithNotification:ZZDownloadTaskDiskSpaceWarningNotification title:@"磁盘要爆炸了啊(-｡-;)" message:@"空间已经小于300M、注意及时清理哟"];
-    } else if (message.command == ZZDownloadMessageCommandNotifyDiskBakuhatu) {
-        [self notifyWithNotification:ZZDownloadTaskDiskSpaceErrorNotification title:@"磁盘要爆炸了啊(-｡-;)" message:@"空间小于100M、已经开启自动防御停止下载了哦、注意及时清理"];
-    } else if (message.command == ZZDownloadMessageCommandNotifyNetWorkChangedInterrupt) {
-        [self notifyWithNotification:ZZDownloadTaskNetWorkChangedInterruptNotification title:@"穿越注意穿越注意(-｡-;)" message:@"网络环境变化、自动防御开启、下载停止ˊ_>ˋ"];
-    } else if (message.command == ZZDownloadMessageCommandNotifyNetworkChangedResume) {
-        [self notifyWithNotification:ZZDownloadTaskNetWorkChangedResumeNotification title:@"穿越注意穿越注意(-｡-;)" message:@"恢复下载、恢复下载ˊ_>ˋ"];
-    }
+        if (message.command == ZZDownloadMessageCommandNeedBuild) {
+            [self buildAllTaskInfo];
+            return;
+        }
+        if (message.command == ZZDownloadMessageCommandNeedUpdateInfo) {
+            [self updateInfoWithTask:message.task];
+        } else if (message.command == ZZDownloadMessageCommandNeedNotifyUI) {
+            [self notifyUi:message.key withCompletationBlock:nil];
+        } else if (message.command == ZZDownloadMessageCommandNeedNotifyUIByCheck) {
+            [self notifyUi:message.key withCompletationBlock:message.block];
+        } else if (message.command == ZZDownloadMessageCommandRemoveTaskInfo) {
+            [self removeTaskInfo:message.key];
+        } else if (message.command == ZZDownloadMessageCommandNotifyDiskWarning) {
+            [self notifyWithNotification:ZZDownloadTaskDiskSpaceWarningNotification title:@"磁盘要爆炸了啊(-｡-;)" message:@"空间已经小于300M、注意及时清理哟"];
+        } else if (message.command == ZZDownloadMessageCommandNotifyDiskBakuhatu) {
+            [self notifyWithNotification:ZZDownloadTaskDiskSpaceErrorNotification title:@"磁盘要爆炸了啊(-｡-;)" message:@"空间小于100M、已经开启自动防御停止下载了哦、注意及时清理"];
+        } else if (message.command == ZZDownloadMessageCommandNotifyNetWorkChangedInterrupt) {
+            [self notifyWithNotification:ZZDownloadTaskNetWorkChangedInterruptNotification title:@"穿越注意穿越注意(-｡-;)" message:@"网络环境变化、自动防御开启、下载停止ˊ_>ˋ"];
+        } else if (message.command == ZZDownloadMessageCommandNotifyNetworkChangedResume) {
+            [self notifyWithNotification:ZZDownloadTaskNetWorkChangedResumeNotification title:@"穿越注意穿越注意(-｡-;)" message:@"恢复下载、恢复下载ˊ_>ˋ"];
+        }
     }
 }
 
@@ -119,7 +118,7 @@ NSString * const ZZDownloadTaskNetWorkChangedResumeNotification = @"ZZDownloadTa
                 self.showAlert = NO;
             }
         }
-
+        
     });
 }
 
@@ -130,8 +129,8 @@ NSString * const ZZDownloadTaskNetWorkChangedResumeNotification = @"ZZDownloadTa
 
 - (void)removeTaskInfo:(NSString *)key
 {
-//    ZZDownloadQueueAssert(ZZDownloadNotifyQueueName);
-
+    //    ZZDownloadQueueAssert(ZZDownloadNotifyQueueName);
+    
     if (!key) {
         return;
     }
@@ -141,8 +140,8 @@ NSString * const ZZDownloadTaskNetWorkChangedResumeNotification = @"ZZDownloadTa
 
 - (void)notifyUi:(NSString *)key withCompletationBlock:(void (^)(id))block
 {
-//    ZZDownloadQueueAssert(ZZDownloadNotifyQueueName);
-
+    //    ZZDownloadQueueAssert(ZZDownloadNotifyQueueName);
+    
     __block ZZDownloadTaskInfo *task = self.allTaskInfoDict[key];
     if (task) {
         gettimeofday(&container, NULL);
@@ -155,7 +154,7 @@ NSString * const ZZDownloadTaskNetWorkChangedResumeNotification = @"ZZDownloadTa
         if (now - old > 1000) {
             dispatch_async(dispatch_get_main_queue(), ^{
                 if (task.argv) {
-                    [[NSNotificationCenter defaultCenter] postNotificationName:ZZDownloadTaskNotifyUiNotification object:[task copy]];
+                    [[NSNotificationCenter defaultCenter] postNotificationName:ZZDownloadTaskNotifyUiNotification object:task];
                 }
             });
         }
@@ -167,8 +166,8 @@ NSString * const ZZDownloadTaskNetWorkChangedResumeNotification = @"ZZDownloadTa
 
 - (void)updateInfoWithTask:(ZZDownloadTask *)task
 {
-//    ZZDownloadQueueAssert(ZZDownloadNotifyQueueName);
-
+    //    ZZDownloadQueueAssert(ZZDownloadNotifyQueueName);
+    
     if (!task || !task.key) {
         return;
     }
@@ -180,6 +179,7 @@ NSString * const ZZDownloadTaskNetWorkChangedResumeNotification = @"ZZDownloadTa
         self.allTaskInfoDict[task.key] = tmpTask;
         [self notifyUi:tmpTask.key withCompletationBlock:nil];
     }
+    tmpTask.lastestState = tmpTask.state;
     tmpTask.state = task.state;
     tmpTask.command = task.command;
     if (!task.argv) {
@@ -189,16 +189,16 @@ NSString * const ZZDownloadTaskNetWorkChangedResumeNotification = @"ZZDownloadTa
     tmpTask.lastestError = task.lastestError;
     tmpTask.sectionsDownloadedList = task.sectionsDownloadedList;
     tmpTask.sectionsLengthList = task.sectionsLengthList;
-    tmpTask.sectionsContentTime = task.sectionsContentTime ;
+    tmpTask.sectionsContentTime = task.sectionsContentTime;
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
 {
     if (context == ZZDownloadStateChangedContext) {
         if ([change[NSKeyValueChangeNewKey] unsignedIntegerValue] != [change[NSKeyValueChangeOldKey] unsignedIntegerValue]) {
-//            NSLog(@"key=%@ old = %@ new = %@", [object key], change[@"old"], change[@"new"]);
+            //            NSLog(@"key=%@ old = %@ new = %@", [object key], change[@"old"], change[@"new"]);
             ZZDownloadMessage *message = [[ZZDownloadMessage alloc] init];
-            ZZDownloadTask *task = [object copy];
+            ZZDownloadTask *task = [object deepCopy];
             message.command = ZZDownloadMessageCommandNeedUpdateInfo;
             message.key = [task key];
             message.task = task;
@@ -216,8 +216,8 @@ NSString * const ZZDownloadTaskNetWorkChangedResumeNotification = @"ZZDownloadTa
 
 - (void)buildAllTaskInfo
 {
-//    ZZDownloadQueueAssert(ZZDownloadNotifyQueueName);
-
+    //    ZZDownloadQueueAssert(ZZDownloadNotifyQueueName);
+    
     [self.allTaskInfoDict removeAllObjects];
 }
 

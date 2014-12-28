@@ -33,6 +33,7 @@
     info.sectionsDownloadedList = [self.sectionsDownloadedList copyWithZone:zone];
     info.sectionsLengthList = [self.sectionsLengthList copyWithZone:zone];
     info.index = self.index;
+    info.lastestState = self.lastestState;
     return info;
 }
 
@@ -144,7 +145,7 @@
     else {
         tString = [[NSString alloc]initWithFormat:@"%.1f",t];
     }
-
+    
     if (self.command == ZZDownloadAssignedCommandStart) {
         if (self.state == ZZDownloadStateWaiting || self.state == ZZDownloadStateNothing) {
             return [NSString stringWithFormat:@"等待中: %@/%@MB",dString, tString];
@@ -168,11 +169,7 @@
         } else if (self.state == ZZDownloadStateFail) {
             NSString *failDesc;
             if (self.lastestError) {
-                if (self.lastestError.userInfo[@"originError"]) {
-                    failDesc = [self.lastestError.userInfo[@"originError"] localizedDescription];
-                } else {
-                    failDesc = [self.lastestError localizedDescription];
-                }
+                failDesc = [self.lastestError localizedDescription];
             }
             return [NSString stringWithFormat:@"失败原因:%@",failDesc?:@"未知"];
         } else if (self.state == ZZDownloadStateWaiting) {
@@ -188,11 +185,7 @@
         } else if (self.state == ZZDownloadStateInvalid) {
             NSString *failDesc;
             if (self.lastestError) {
-                if (self.lastestError.userInfo[@"originError"]) {
-                    failDesc = [self.lastestError.userInfo[@"originError"] localizedDescription];
-                } else {
-                    failDesc = [self.lastestError localizedDescription];
-                }
+                failDesc = [self.lastestError localizedDescription];
             }
             return [NSString stringWithFormat:@"无效原因:%@",failDesc?:@"未知"];
         } else if (self.state == ZZDownloadStateParsing) {
@@ -216,7 +209,7 @@
     if (self.command == ZZDownloadAssignedCommandStart) {
         return 2;
     }
-
+    
     if (self.command == ZZDownloadAssignedCommandNone) {
         if (self.state == ZZDownloadStateNothing || self.state == ZZDownloadStateRealPaused || self.state == ZZDownloadStateInterrputPaused || self.state == ZZDownloadStateInvalid) {
             return 1;

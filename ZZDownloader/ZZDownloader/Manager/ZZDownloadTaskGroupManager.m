@@ -21,7 +21,6 @@ NSString * const ZZDownloadTaskGroupNotifyUiNotification = @"ZZDownloadTaskGroup
 
 @property (nonatomic) NSMutableDictionary *allTaskGroupInfo;
 @property (nonatomic, strong) NSMutableDictionary *allTaskNotificationTimeDict;
-//@property (nonatomic) dispatch_queue_t managerQueue;
 
 @end
 
@@ -34,7 +33,6 @@ NSString * const ZZDownloadTaskGroupNotifyUiNotification = @"ZZDownloadTaskGroup
     dispatch_once(&onceToken, ^{
         share = [[ZZDownloadTaskGroupManager alloc] init];
         share.allTaskGroupInfo = [NSMutableDictionary dictionary];
-//        share.managerQueue = dispatch_queue_create("com.zzdownloader.bilitaskgroupmanager.groupmanager.queue", DISPATCH_QUEUE_SERIAL);
         [[NSNotificationCenter defaultCenter] addObserver:share selector:@selector(notifyReceived:) name:ZZDownloadTaskNotifyUiNotification object:nil];
     });
     return share;
@@ -63,15 +61,15 @@ NSString * const ZZDownloadTaskGroupNotifyUiNotification = @"ZZDownloadTaskGroup
     if (!taskInfo) {
         return;
     }
-//    dispatch_async(dispatch_get_main_queue(), ^{
     [self dealTaskInfo:taskInfo];
-//    });
 }
 
 - (void)dealTaskInfo:(ZZDownloadTaskInfo *)taskInfo
 {
     NSAssert([NSThread isMainThread],@"ZZDownloadTaskGroupManager assert");
-
+    if (!taskInfo) {
+        return;
+    }
     ZZDownloadBaseEntity *entity = [taskInfo recoverEntity];
     NSString *aggregationKey = [entity aggregationKey];
     __block ZZDownloadTaskGroup *group = self.allTaskGroupInfo[aggregationKey];
@@ -110,7 +108,7 @@ NSString * const ZZDownloadTaskGroupNotifyUiNotification = @"ZZDownloadTaskGroup
             group.watingCount += 1;
         }
     } else {
-        if (taskInfo.state != oldtaskInfo.state) {
+        if (taskInfo.lastestState != taskInfo.state) {
             if (taskInfo.state == ZZDownloadStateDownloaded) {
                 group.downloadedCount += 1;
             } else if (taskInfo.state == ZZDownloadStateDownloading) {
@@ -118,11 +116,11 @@ NSString * const ZZDownloadTaskGroupNotifyUiNotification = @"ZZDownloadTaskGroup
             } else if (taskInfo.state == ZZDownloadStateParsing || taskInfo.state == ZZDownloadStateDownloadingCover || taskInfo.state == ZZDownloadStateDownloadingDanmaku || taskInfo.state == ZZDownloadStateWaiting || taskInfo.state == ZZDownloadStateFail) {
                 group.watingCount += 1;
             }
-            if (oldtaskInfo.state == ZZDownloadStateDownloaded) {
+            if (taskInfo.lastestState == ZZDownloadStateDownloaded) {
                 group.downloadedCount -= 1;
-            } else if (oldtaskInfo.state == ZZDownloadStateDownloading) {
+            } else if (taskInfo.lastestState == ZZDownloadStateDownloading) {
                 group.runningCount -= 1;
-            } else if (oldtaskInfo.state == ZZDownloadStateParsing || taskInfo.state == ZZDownloadStateDownloadingCover || taskInfo.state == ZZDownloadStateDownloadingDanmaku || taskInfo.state == ZZDownloadStateWaiting || taskInfo.state == ZZDownloadStateFail) {
+            } else if (taskInfo.lastestState == ZZDownloadStateParsing || taskInfo.state == ZZDownloadStateDownloadingCover || taskInfo.state == ZZDownloadStateDownloadingDanmaku || taskInfo.state == ZZDownloadStateWaiting || taskInfo.state == ZZDownloadStateFail) {
                 group.watingCount -= 1;
             }
         }
@@ -150,9 +148,7 @@ NSString * const ZZDownloadTaskGroupNotifyUiNotification = @"ZZDownloadTaskGroup
     uint64_t old = [self.allTaskNotificationTimeDict[group.key] longValue];
     self.allTaskNotificationTimeDict[group.key] = [NSNumber numberWithLong:now];
     if (now - old > 1000) {
-//        dispatch_async(dispatch_get_main_queue(), ^{
             [[NSNotificationCenter defaultCenter] postNotificationName:ZZDownloadTaskGroupNotifyUiNotification object:group];
-//        });
     }
 }
 @end

@@ -75,6 +75,7 @@ typedef NS_ENUM(NSUInteger, ZZDownloadTaskArrangeType) {
 
 - (ZZDownloadBaseEntity *)recoverEntity;
 
+- (ZZDownloadTask *)deepCopy;
 // used for task info
 
 @property (nonatomic) int32_t triedCount;

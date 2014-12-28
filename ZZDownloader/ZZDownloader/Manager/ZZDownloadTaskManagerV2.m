@@ -84,7 +84,7 @@
                         [manager writeTaskToDisk:task];
                         [manager notifyQueueUpdateMessage:task];
                     }
-
+                    
                 }
             }];
         };
@@ -108,7 +108,7 @@
         NSString *cacheDir = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES)[0];
         downloadFolder = [cacheDir stringByAppendingPathComponent:ZZDownloadTaskManagerTaskDir];
     }
-
+    
     return downloadFolder;
 }
 
@@ -130,7 +130,7 @@
 {
     ZZDownloadQueueAssert(ZZDownloadOpQueueName);
     
-//    NSLog(@"do op operation=%u key=%@", operation.command, operation.key);
+    //    NSLog(@"do op operation=%u key=%@", operation.command, operation.key);
     if (operation.command == ZZDownloadCommandBuild) {
         [self buildAllTaskInfo];
         [self executeOperationByWeight];
@@ -198,7 +198,7 @@
 - (void)buildAllTaskInfo
 {
     ZZDownloadQueueAssert(ZZDownloadOpQueueName);
-
+    
     [self.allTaskDict removeAllObjects];
     NSArray *filePathList = [self getBiliTaskFilePathList];
     NSError *error;
@@ -220,8 +220,8 @@
         }
         [rtask addObserver:[ZZDownloadNotifyManager shared] forKeyPath:@"state" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:ZZDownloadStateChangedContext];
         rtask.taskArrangeType = ZZDownloadTaskArrangeTypeUnArranged;
-//        rtask.command = ZZDownloadAssignedCommandNone;
-
+        //        rtask.command = ZZDownloadAssignedCommandNone;
+        
         [self notifyQueueUpdateMessage:rtask];
         if (rtask.key) {
             self.allTaskDict[rtask.key] = rtask;
@@ -242,7 +242,7 @@
 - (void)updateTaskByEntity:(ZZDownloadBaseEntity *)entity
 {
     ZZDownloadQueueAssert(ZZDownloadOpQueueName);
-
+    
     NSString *key = [entity entityKey];
     if (!key) {
         return;
@@ -266,7 +266,7 @@
 - (void)startDownloadTask:(NSString *)key
 {
     ZZDownloadQueueAssert(ZZDownloadOpQueueName);
-
+    
     ZZDownloadTask *task = self.allTaskDict[key];
     if (!task) return;
     [task startWithStartSuccessBlock:^{
@@ -274,13 +274,13 @@
     }];
     [self writeTaskToDisk:task];
     [self notifyQueueUpdateMessage:task];
-
+    
 }
 
 - (void)pauseDownloadTask:(NSString *)key
 {
     ZZDownloadQueueAssert(ZZDownloadOpQueueName);
-
+    
     ZZDownloadTask *task = self.allTaskDict[key];
     if (!task) return;
     [task pauseWithPauseSuccessBlock:^{
@@ -291,7 +291,7 @@
             NSArray *tmpOp = [[ZZDownloadUrlConnectionQueue shared] operations];
             for (ZZDownloadTaskCFNetworkOperation *op in tmpOp) {
                 if ([op.key isEqualToString:key]) {
-//                    [op cancel];
+                    //                    [op cancel];
                     [op pause];
                 }
             }
@@ -304,7 +304,7 @@
 - (void)interruptPauseDownloadTask:(NSString *)key
 {
     ZZDownloadQueueAssert(ZZDownloadOpQueueName);
-
+    
     ZZDownloadTask *task = self.allTaskDict[key];
     if (!task) return;
     [task pauseWithPauseSuccessBlock:^{
@@ -327,7 +327,7 @@
 - (void)removeDownloadTask:(NSString *)key
 {
     ZZDownloadQueueAssert(ZZDownloadOpQueueName);
-
+    
     ZZDownloadTask *task = self.allTaskDict[key];
     if (!task) return;
     [task removeWithRemoveSuccessBlock:^{
@@ -336,7 +336,7 @@
         for (ZZDownloadTaskCFNetworkOperation *op in ops) {
             if ([op.key isEqualToString:key]) {
                 inQueue = YES;
-//                [op cancel];
+                //                [op cancel];
                 [op remove];
                 break;
             }
@@ -349,7 +349,7 @@
 
 - (void)deleteTask:(NSString *)key {
     ZZDownloadQueueAssert(ZZDownloadOpQueueName);
-
+    
     ZZDownloadTask *task = self.allTaskDict[key];
     if (!task) {
         return;
@@ -378,7 +378,7 @@
 - (void)resumeAllTask
 {
     ZZDownloadQueueAssert(ZZDownloadOpQueueName);
-
+    
     __block BOOL dealed = NO;
     [self.allTaskDict enumerateKeysAndObjectsUsingBlock:^(NSString* key, ZZDownloadTask *value, BOOL *stop) {
         if (value.state != ZZDownloadStateInterrputPaused) {
@@ -401,7 +401,7 @@
 - (void)pauseAllTask
 {
     ZZDownloadQueueAssert(ZZDownloadOpQueueName);
-
+    
     if (self.isDownloading) {
         ZZDownloadMessage *message = [ZZDownloadMessage new];
         message.command = ZZDownloadMessageCommandNotifyNetWorkChangedInterrupt;
@@ -419,24 +419,24 @@
 -(void)executeBackgroundTaskByWeight:(void (^)(void))block
 {
     ZZDownloadQueueAssert(ZZDownloadOpQueueName);
-//    __block int32_t addCount = [[ZZDownloadBackgroundSessionManager shared] bgCachedCount];
-//    if (addCount <= 2) {
+    //    __block int32_t addCount = [[ZZDownloadBackgroundSessionManager shared] bgCachedCount];
+    //    if (addCount <= 2) {
     __block int32_t addCount = 0;
-        NSArray *keys = [self.allTaskDict keysSortedByValueUsingComparator:^(ZZDownloadTask *task1, ZZDownloadTask *task2) {
-            return (NSComparisonResult)(task1.weight > task2.weight);
-        }];
-        [keys enumerateObjectsUsingBlock:^(NSString *key, NSUInteger index, BOOL *stop) {
-            ZZDownloadTask *task = self.allTaskDict[key];
-            if (task && [self taskCanStartDownload:task]) {
-                int32_t added = [[ZZDownloadBackgroundSessionManager shared] addCacheTaskByTask:task];
-                [self writeTaskToDisk:task];
-                addCount += added;
-                if (addCount > 5) {
-                    *stop = YES;
-                }
+    NSArray *keys = [self.allTaskDict keysSortedByValueUsingComparator:^(ZZDownloadTask *task1, ZZDownloadTask *task2) {
+        return (NSComparisonResult)(task1.weight > task2.weight);
+    }];
+    [keys enumerateObjectsUsingBlock:^(NSString *key, NSUInteger index, BOOL *stop) {
+        ZZDownloadTask *task = self.allTaskDict[key];
+        if (task && [self taskCanStartDownload:task]) {
+            int32_t added = [[ZZDownloadBackgroundSessionManager shared] addCacheTaskByTask:task];
+            [self writeTaskToDisk:task];
+            addCount += added;
+            if (addCount > 5) {
+                *stop = YES;
             }
-        }];
-//    }
+        }
+    }];
+    //    }
     if (block) {
         block();
     }
@@ -445,7 +445,7 @@
 - (void)executeOperationByWeight
 {
     ZZDownloadQueueAssert(ZZDownloadOpQueueName);
-
+    
     if ([[ZZDownloadUrlConnectionQueue shared] operationCount] < [[ZZDownloadUrlConnectionQueue shared] maxConcurrentOperationCount]) {
         NSArray *keys = [self.allTaskDict keysSortedByValueUsingComparator:^(ZZDownloadTask *task1, ZZDownloadTask *task2) {
             return (NSComparisonResult)(task1.weight > task2.weight);
@@ -454,7 +454,7 @@
             __block ZZDownloadTask *task = self.allTaskDict[key];
             if (task && [self taskCanStartDownload:task]) {
                 if (![self settingCouldDownload]) {
-                    task.lastestError = [NSError errorWithDomain:ZZDownloadTaskErrorDomain code:ZZDownloadTaskErrorTypeInterruptError userInfo:@{NSLocalizedDescriptionKey: @"network not in wifi"}];
+                    //                    task.lastestError = [NSError errorWithDomain:ZZDownloadTaskErrorDomain code:ZZDownloadTaskErrorTypeInterruptError userInfo:@{NSLocalizedDescriptionKey: @"network not in wifi"}];
                     *stop = YES;
                     return;
                 }
@@ -464,7 +464,7 @@
                 op.completionBlock = ^{
                     self.CFCompleteBlock(task.key);
                 };
-//                [[ZZDownloadUrlConnectionQueue shared] addOperation:op];
+                //                [[ZZDownloadUrlConnectionQueue shared] addOperation:op];
                 [[ZZDownloadUrlConnectionQueue shared] addOperations:@[op] waitUntilFinished:NO];
                 if ([[ZZDownloadUrlConnectionQueue shared] operationCount] >= [[ZZDownloadUrlConnectionQueue shared] maxConcurrentOperationCount]) {
                     *stop = YES;
@@ -501,7 +501,7 @@
 - (void)dealFailTask:(NSString *)key
 {
     ZZDownloadQueueAssert(ZZDownloadOpQueueName);
-
+    
     ZZDownloadTask *task = self.allTaskDict[key];
     if (!task) return;
     task.triedCount += 1;
@@ -526,12 +526,12 @@
 - (void)executeOperationByKey:(NSString *)key
 {
     ZZDownloadQueueAssert(ZZDownloadOpQueueName);
-
+    
     if ([[ZZDownloadUrlConnectionQueue shared] operationCount] < [[ZZDownloadUrlConnectionQueue shared] maxConcurrentOperationCount]) {
         ZZDownloadTask *task = self.allTaskDict[key];
         if (task && [self taskCanStartDownload:task]) {
             if (![self settingCouldDownload]) {
-                task.lastestError = [NSError errorWithDomain:ZZDownloadTaskErrorDomain code:ZZDownloadTaskErrorTypeInterruptError userInfo:@{NSLocalizedDescriptionKey: @"network not in wifi"}];
+                //                task.lastestError = [NSError errorWithDomain:ZZDownloadTaskErrorDomain code:ZZDownloadTaskErrorTypeInterruptError userInfo:@{NSLocalizedDescriptionKey: @"network not in wifi"}];
                 return;
             }
             task.taskArrangeType = ZZDownloadTaskArrangeTypeCFSync;
@@ -540,9 +540,9 @@
             op.completionBlock = ^{
                 self.CFCompleteBlock(task.key);
             };
-//            [[ZZDownloadUrlConnectionQueue shared] addOperation:op];
+            //            [[ZZDownloadUrlConnectionQueue shared] addOperation:op];
             [[ZZDownloadUrlConnectionQueue shared] addOperations:@[op] waitUntilFinished:NO];
-
+            
         }
     }
 }
@@ -551,7 +551,7 @@
 - (BOOL)writeTaskToDisk:(ZZDownloadTask *)task
 {
     ZZDownloadQueueAssert(ZZDownloadOpQueueName);
-
+    
     NSError *error;
     NSDictionary *dict = [MTLJSONAdapter JSONDictionaryFromModel:task];
     NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dict options:NSJSONWritingPrettyPrinted error:&error];
@@ -601,16 +601,16 @@
     if (self.enableDownloadUnderWWAN) {
         return YES;
     }
-    Reachability* curReach = [Reachability reachabilityWithHostName:@"www.baidu.com"];
+    Reachability* curReach = [Reachability reachabilityWithHostname:@"www.baidu.com"];
     NetworkStatus status = [curReach currentReachabilityStatus];
     NSParameterAssert([curReach isKindOfClass: [Reachability class]]);
-    if (status == kNotReachable) {
+    if (status == NotReachable) {
         return NO;
     }
-    else if (status == kReachableViaWiFi) {
+    else if (status == ReachableViaWiFi) {
         return YES;
     }
-    else if (status == kReachableViaWWAN) {
+    else if (status == ReachableViaWWAN) {
         return NO;
     }
     return NO;
@@ -621,7 +621,7 @@
     ZZDownloadMessage *message = [[ZZDownloadMessage alloc] init];
     message.key = task.key;
     message.command = ZZDownloadMessageCommandNeedUpdateInfo;
-    message.task = task;
+    message.task = [task deepCopy];
     
     [[ZZDownloadNotifyManager shared] addOp:message];
     
@@ -647,7 +647,7 @@
 {
     NSCondition *condit = [NSCondition new];
     __block volatile BOOL dealed = NO;
-
+    
     [[ZZDownloadOpQueue shared] addOperationWithBlock:^{
         block();
         [condit lock];
@@ -661,7 +661,7 @@
         [condit waitUntilDate:[NSDate dateWithTimeIntervalSinceNow:1]];
     }
     [condit unlock];
-
+    
 }
 
 - (void)notifyUpdate:(NSString *)key
