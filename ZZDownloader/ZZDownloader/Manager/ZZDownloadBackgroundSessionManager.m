@@ -9,7 +9,6 @@
 #import "ZZDownloadBackgroundSessionManager.h"
 #import <CommonCrypto/CommonDigest.h>
 #import "ZZDownloadTaskManagerV2.h"
-#import "libavformat/version.h"
 #import "ZZDownloadTaskCFNetworkOperation.h"
 
 #define ZZDownloadBackgroundSessionManagerName "ZZDownloadUrlSessionOpThread"
@@ -45,18 +44,12 @@
                 [manager.allTaskList addObject:task.taskDescription];
             }
         }
-        
-//        [[NSNotificationCenter defaultCenter] addObserver:manager selector:@selector(taskDidResume:) name:AFNetworkingTaskDidResumeNotification object:nil];
-//        [[NSNotificationCenter defaultCenter] addObserver:manager selector:@selector(taskDidComplete:) name:AFNetworkingTaskDidCompleteNotification object:nil];
-//        [[NSNotificationCenter defaultCenter] addObserver:manager selector:@selector(taskDidSuspend:) name:AFNetworkingTaskDidSuspendNotification object:nil];
-//        [[NSNotificationCenter defaultCenter] addObserver:manager selector:@selector(taskDidFailToRemove:) name:AFURLSessionDownloadTaskDidFailToMoveFileNotification object:nil];
     });
     return manager;
 }
 
 - (void)dealloc
 {
-//    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 - (NSInteger)bgCachedCount
@@ -67,8 +60,10 @@
 - (int32_t)addCacheTaskByTask:(ZZDownloadTask *)task
 {
     ZZDownloadBaseEntity *entity = [task recoverEntity];
-    
-    NSString *needTypeTag = [entity getTypeTag:YES];
+    if ([entity updateSelf]) {
+        task.argv = [MTLJSONAdapter JSONDictionaryFromModel:entity];
+    }
+    NSString *needTypeTag = [entity uniqueKey];
     int32_t sectionCount = [entity getSectionCount];
     
     int32_t added = 0;
@@ -125,7 +120,7 @@
     __block NSURLSessionDownloadTask *rq;
     dispatch_sync(dispatch_get_main_queue(), ^{
         NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:url]];
-        [request addValue:[NSString stringWithUTF8String:LIBAVFORMAT_IDENT] forHTTPHeaderField:@"User-Agent"];
+//        [request addValue:[NSString stringWithUTF8String:LIBAVFORMAT_IDENT] forHTTPHeaderField:@"User-Agent"];
         rq = [self downloadTaskWithRequest:request progress:nil destination:nil completionHandler:nil];
         rq.taskDescription = taskDescription;
         [self.allTaskList addObject:rq.taskDescription];

@@ -12,6 +12,7 @@
 @interface ZZDownloadTaskInfo : NSObject <NSCopying>
 
 @property (nonatomic) ZZDownloadState state;
+@property (nonatomic) ZZDownloadState lastestState;
 @property (nonatomic) ZZDownloadAssignedCommand command;
 @property (nonatomic) NSString *key;
 @property (nonatomic) NSString *entityType;

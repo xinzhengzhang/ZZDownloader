@@ -13,7 +13,6 @@
 #import "BiliDownloadAvGroup.h"
 #import "ZZDownloadNotifyManager.h"
 #import "ZZDownloadTaskGroupManager.h"
-#import "ZZDownloadTaskManager.h"
 #import "ZZDownloadTaskManagerV2.h"
 
 @interface BiliDownloadManager : NSObject
