@@ -140,35 +140,6 @@ static NSRecursiveLock *lock;
     return task;
 }
 
-- (long long)getTotalLength
-{
-    long long t = 0;
-    for (NSNumber *n in self.sectionsLengthList) {
-        long long x = [n longLongValue];
-        t += x;
-    }
-    return t;
-}
-
-- (long long)getDownloadedLength
-{
-    long long t = 0;
-    for (NSNumber *n in self.sectionsDownloadedList) {
-        long long x = [n longLongValue];
-        t += x;
-    }
-    return t;
-}
-
-- (CGFloat)getProgress
-{
-    if (self.state == ZZDownloadStateDownloaded) {
-        return 1.0f;
-    }
-    CGFloat x = [self getDownloadedLength] * 1.0 / ([self getTotalLength] ?: 1);
-    return x >= 1.0f ? 0.99 : x;
-}
-
 #pragma mark - interface
 - (void)startWithStartSuccessBlock:(void (^)(void))block;
 {

@@ -85,11 +85,6 @@ typedef NS_ENUM(NSUInteger, ZZDownloadTaskArrangeType) {
 
 @property (nonatomic) int32_t triedCount;
 
-- (long long)getTotalLength;
-- (long long)getDownloadedLength;
-- (CGFloat)getProgress;
-- (NSArray *)getSectionsContentTimes;
-
 @property (atomic) NSMutableArray *sectionsLengthList;
 @property (atomic) NSMutableArray *sectionsDownloadedList;
 @property (atomic) NSMutableArray *sectionsContentTime;

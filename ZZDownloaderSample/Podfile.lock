@@ -68,18 +68,11 @@ PODS:
     - Mantle
     - Reachability
     - SVProgressHUD (~> 0.8)
-    - ZZDownloader/Bili (= 0.0.1)
     - ZZDownloader/Manager (= 0.0.1)
     - ZZDownloader/Model (= 0.0.1)
     - ZZDownloader/Operation (= 0.0.1)
     - ZZDownloader/Parser (= 0.0.1)
     - ZZDownloader/Queue (= 0.0.1)
-  - ZZDownloader/Bili (0.0.1):
-    - AFDownloadRequestOperation
-    - libextobjc
-    - Mantle
-    - Reachability
-    - SVProgressHUD (~> 0.8)
   - ZZDownloader/Manager (0.0.1):
     - AFDownloadRequestOperation
     - libextobjc
@@ -116,7 +109,7 @@ DEPENDENCIES:
 
 EXTERNAL SOURCES:
   ZZDownloader:
-    :local: ../
+    :path: ../
 
 SPEC CHECKSUMS:
   AFDownloadRequestOperation: e223a65bc56fb8e6ae5d289b649c7bcc6b307f0d
@@ -125,6 +118,6 @@ SPEC CHECKSUMS:
   Mantle: d7c5ac734579ec751c58fecbf56189853056c58c
   Reachability: 1ef8adf5c4e3d362f96515d4278f68dad3c26930
   SVProgressHUD: adf9def97327df88dee15e9ad8033fde6961f7b4
-  ZZDownloader: b833b70464edc04e31da8f39077b7b2ea155d336
+  ZZDownloader: 4364fc65f613adedf2794c3b3ba07d4f5fcf2ae7
 
 COCOAPODS: 0.35.0

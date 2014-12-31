@@ -9,10 +9,6 @@ Pod::Spec.new do |s|
   s.requires_arc   = true
   s.source_files   = 'ZZDownloader/ZZDownloader/*.{h,m}'
 
-  s.subspec 'Bili' do |ss|
-	ss.source_files= 'ZZDownloader/ZZDownloader/Bili/*.{h,m}'
-  end
-
   s.subspec 'Manager' do |ss|
 	ss.source_files = 'ZZDownloader/ZZDownloader/Manager/*.{h,m}'
   end
