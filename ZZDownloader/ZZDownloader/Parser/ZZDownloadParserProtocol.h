@@ -8,12 +8,13 @@
 
 #import <Foundation/Foundation.h>
 #import "ZZDownloadTask.h"
+
+@class ZZDownloadTask;
+
 typedef NS_ENUM(NSUInteger, ZZDownloadEntityType) {
     ZZDownloadEntityTypeNormal = 2333,
     ZZDownloadEntityTypePPTV
 };
-
-@class ZZDownloadTask;
 
 @protocol ZZDownloadParserProtocol <NSObject>
 

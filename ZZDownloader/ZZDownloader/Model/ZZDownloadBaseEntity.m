@@ -7,12 +7,23 @@
 //
 
 #import "ZZDownloadBaseEntity.h"
-
 @implementation ZZDownloadBaseEntity
 
 + (NSDictionary *)JSONKeyPathsByPropertyKey
 {
     return @{};
+}
+
++ (const void  **)argvKeysFlags
+{
+    NSAssert(nil, @"sub class has not implement ZZDownloadBaseEntity");
+    return NULL;
+}
+
++ (NSArray *)argvKeys
+{
+    NSAssert(nil, @"sub class has not implement ZZDownloadBaseEntity");
+    return @[];
 }
 
 - (NSString *)title
@@ -38,6 +49,12 @@
     return @"";
 }
 
+- (NSString *)aggregationTitle
+{
+    NSAssert(nil, @"sub class has not implement ZZDownloadBaseEntity");
+    return @"";
+}
+
 - (NSString *)aggregationType
 {
     NSAssert(nil, @"sub class has not implement ZZDownloadBaseEntity");
@@ -48,6 +65,22 @@
 {
     NSAssert(nil, @"sub class has not implement ZZDownloadBaseEntity");
     return @"";
+}
+
+- (NSString *)uniqueKey
+{
+    NSAssert(nil, @"sub class has not implement ZZDownloadBaseEntity");
+    return @"";
+}
+
+- (BOOL)updateSelf
+{
+    return YES;
+}
+
+- (BOOL)isValid:(ZZDownloadTask *)task
+{
+    return YES;
 }
 
 - (NSString *)entityType
@@ -96,25 +129,10 @@
     return 0;
 }
 
-- (NSString *)uniqueKey
-{
-    NSAssert(nil, @"sub class has not implement ZZDownloadBaseEntity");
-    return @"";
-}
-
 - (NSString *)destinationRootDirPath
 {
     NSAssert(nil, @"sub class has not implement ZZDownloadBaseEntity");
     return @"";
 }
 
-- (BOOL)updateSelf
-{
-    return YES;
-}
-
-- (BOOL)isValid:(ZZDownloadTask *)task
-{
-    return YES;
-}
 @end

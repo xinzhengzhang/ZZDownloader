@@ -24,6 +24,10 @@
     static dispatch_once_t onceToken;
     static ZZDownloadBackgroundSessionManager *manager;
     dispatch_once(&onceToken, ^{
+        if ([[[UIDevice currentDevice] systemVersion] floatValue] < 7.0) {
+            manager = nil;
+        }
+        return ;
         NSURLSessionConfiguration *config;
         if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 8.0) {
             config = [NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:@"com.bilibi.session.manager.background.identifier.v3"];
@@ -31,8 +35,8 @@
             config = [NSURLSessionConfiguration backgroundSessionConfiguration:@"com.bilibi.session.manager.background.identifier.v2"];
         }
         config.allowsCellularAccess = [[ZZDownloadTaskManagerV2 shared] enableDownloadUnderWWAN];
-
-
+        
+        
         manager = [[ZZDownloadBackgroundSessionManager alloc] initWithSessionConfiguration:config];
         
         manager.allTaskList = [NSMutableArray array];
@@ -48,9 +52,6 @@
     return manager;
 }
 
-- (void)dealloc
-{
-}
 
 - (NSInteger)bgCachedCount
 {
@@ -63,6 +64,7 @@
     if ([entity updateSelf]) {
         task.argv = [MTLJSONAdapter JSONDictionaryFromModel:entity];
     }
+    
     NSString *needTypeTag = [entity uniqueKey];
     int32_t sectionCount = [entity getSectionCount];
     
@@ -120,13 +122,12 @@
     __block NSURLSessionDownloadTask *rq;
     dispatch_sync(dispatch_get_main_queue(), ^{
         NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:url]];
-//        [request addValue:[NSString stringWithUTF8String:LIBAVFORMAT_IDENT] forHTTPHeaderField:@"User-Agent"];
         rq = [self downloadTaskWithRequest:request progress:nil destination:nil completionHandler:nil];
         rq.taskDescription = taskDescription;
         [self.allTaskList addObject:rq.taskDescription];
         [rq resume];
     });
-
+    
     return rq != nil;
 }
 
@@ -135,7 +136,6 @@
     __weak __typeof(self) weakSelf = self;
     [self setDidFinishEventsForBackgroundURLSessionBlock:^(NSURLSession *session){
         NSLog(@"background awake");
-//        [[ZZDownloadTaskManagerV2 shared] checkSelfUnSecheduledWork:nil];
     }];
     
     [self setSessionDidBecomeInvalidBlock:^(NSURLSession *session, NSError *error) {
@@ -149,7 +149,7 @@
             if (resumeDictionary && error2) {
                 NSString *localFilePath = [resumeDictionary objectForKey:@"NSURLSessionResumeInfoLocalPath"];
                 [[NSFileManager new] removeItemAtPath:localFilePath error:nil];
-
+                
             }
         }
     }];

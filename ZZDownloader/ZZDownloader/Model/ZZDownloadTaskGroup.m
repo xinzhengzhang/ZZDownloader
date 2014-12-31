@@ -19,22 +19,4 @@
     }
     return self;
 }
-
-- (id)copyWithZone:(NSZone *)zone
-{
-    ZZDownloadTaskGroup *group = [[ZZDownloadTaskGroup allocWithZone:zone] init];
-    group.title = [self.title copyWithZone:zone];
-    group.coverUrl = [self.coverUrl copyWithZone:zone];
-    group.key = [self.key copyWithZone:zone];
-    group.realKey = [self.realKey copyWithZone:zone];
-    group.state = self.state;
-    group.taskInfoDict = [self.taskInfoDict mutableCopyWithZone:zone];
-    group.index = self.index;
-    return group;
-}
-
-- (void)dealloc
-{
-
-}
 @end

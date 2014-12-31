@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		54CD26911A53EEB90051E0F7 /* BiliDownloadAVEntity.m in Sources */ = {isa = PBXBuildFile; fileRef = 54CD268C1A53EEB90051E0F7 /* BiliDownloadAVEntity.m */; };
+		54CD26921A53EEB90051E0F7 /* BiliDownloadAvGroup.m in Sources */ = {isa = PBXBuildFile; fileRef = 54CD268E1A53EEB90051E0F7 /* BiliDownloadAvGroup.m */; };
+		54CD26931A53EEB90051E0F7 /* BiliDownloadEpEntity.m in Sources */ = {isa = PBXBuildFile; fileRef = 54CD26901A53EEB90051E0F7 /* BiliDownloadEpEntity.m */; };
+		54CD26961A53EF170051E0F7 /* BiliDownloadManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 54CD26951A53EF170051E0F7 /* BiliDownloadManager.m */; };
 		54F8167F1A145BAF007B258B /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 54F8167E1A145BAF007B258B /* main.m */; };
 		54F816821A145BAF007B258B /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 54F816811A145BAF007B258B /* AppDelegate.m */; };
 		54F816851A145BAF007B258B /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 54F816841A145BAF007B258B /* ViewController.m */; };
@@ -28,6 +32,14 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		54CD268B1A53EEB90051E0F7 /* BiliDownloadAVEntity.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BiliDownloadAVEntity.h; sourceTree = "<group>"; };
+		54CD268C1A53EEB90051E0F7 /* BiliDownloadAVEntity.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BiliDownloadAVEntity.m; sourceTree = "<group>"; };
+		54CD268D1A53EEB90051E0F7 /* BiliDownloadAvGroup.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BiliDownloadAvGroup.h; sourceTree = "<group>"; };
+		54CD268E1A53EEB90051E0F7 /* BiliDownloadAvGroup.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BiliDownloadAvGroup.m; sourceTree = "<group>"; };
+		54CD268F1A53EEB90051E0F7 /* BiliDownloadEpEntity.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BiliDownloadEpEntity.h; sourceTree = "<group>"; };
+		54CD26901A53EEB90051E0F7 /* BiliDownloadEpEntity.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BiliDownloadEpEntity.m; sourceTree = "<group>"; };
+		54CD26941A53EF170051E0F7 /* BiliDownloadManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BiliDownloadManager.h; sourceTree = "<group>"; };
+		54CD26951A53EF170051E0F7 /* BiliDownloadManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BiliDownloadManager.m; sourceTree = "<group>"; };
 		54F816791A145BAF007B258B /* ZZDownloaderSample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ZZDownloaderSample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		54F8167D1A145BAF007B258B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		54F8167E1A145BAF007B258B /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
@@ -82,6 +94,21 @@
 			name = Pods;
 			sourceTree = "<group>";
 		};
+		54CD268A1A53EEB90051E0F7 /* Bili */ = {
+			isa = PBXGroup;
+			children = (
+				54CD268B1A53EEB90051E0F7 /* BiliDownloadAVEntity.h */,
+				54CD268C1A53EEB90051E0F7 /* BiliDownloadAVEntity.m */,
+				54CD268D1A53EEB90051E0F7 /* BiliDownloadAvGroup.h */,
+				54CD268E1A53EEB90051E0F7 /* BiliDownloadAvGroup.m */,
+				54CD268F1A53EEB90051E0F7 /* BiliDownloadEpEntity.h */,
+				54CD26901A53EEB90051E0F7 /* BiliDownloadEpEntity.m */,
+				54CD26941A53EF170051E0F7 /* BiliDownloadManager.h */,
+				54CD26951A53EF170051E0F7 /* BiliDownloadManager.m */,
+			);
+			path = Bili;
+			sourceTree = "<group>";
+		};
 		54F816701A145BAF007B258B = {
 			isa = PBXGroup;
 			children = (
@@ -105,6 +132,7 @@
 		54F8167B1A145BAF007B258B /* ZZDownloaderSample */ = {
 			isa = PBXGroup;
 			children = (
+				54CD268A1A53EEB90051E0F7 /* Bili */,
 				54F816801A145BAF007B258B /* AppDelegate.h */,
 				54F816811A145BAF007B258B /* AppDelegate.m */,
 				54F816831A145BAF007B258B /* ViewController.h */,
@@ -278,9 +306,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				54CD26961A53EF170051E0F7 /* BiliDownloadManager.m in Sources */,
 				54F816851A145BAF007B258B /* ViewController.m in Sources */,
+				54CD26911A53EEB90051E0F7 /* BiliDownloadAVEntity.m in Sources */,
+				54CD26921A53EEB90051E0F7 /* BiliDownloadAvGroup.m in Sources */,
 				54F816821A145BAF007B258B /* AppDelegate.m in Sources */,
 				54F8167F1A145BAF007B258B /* main.m in Sources */,
+				54CD26931A53EEB90051E0F7 /* BiliDownloadEpEntity.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

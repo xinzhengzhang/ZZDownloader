@@ -21,6 +21,7 @@ NSString * const ZZDownloadTaskGroupNotifyUiNotification = @"ZZDownloadTaskGroup
 
 @property (nonatomic) NSMutableDictionary *allTaskGroupInfo;
 @property (nonatomic, strong) NSMutableDictionary *allTaskNotificationTimeDict;
+//@property (nonatomic) dispatch_queue_t managerQueue;
 
 @end
 
@@ -33,6 +34,7 @@ NSString * const ZZDownloadTaskGroupNotifyUiNotification = @"ZZDownloadTaskGroup
     dispatch_once(&onceToken, ^{
         share = [[ZZDownloadTaskGroupManager alloc] init];
         share.allTaskGroupInfo = [NSMutableDictionary dictionary];
+        //        share.managerQueue = dispatch_queue_create("com.zzdownloader.bilitaskgroupmanager.groupmanager.queue", DISPATCH_QUEUE_SERIAL);
         [[NSNotificationCenter defaultCenter] addObserver:share selector:@selector(notifyReceived:) name:ZZDownloadTaskNotifyUiNotification object:nil];
     });
     return share;
@@ -61,7 +63,9 @@ NSString * const ZZDownloadTaskGroupNotifyUiNotification = @"ZZDownloadTaskGroup
     if (!taskInfo) {
         return;
     }
+    //    dispatch_async(dispatch_get_main_queue(), ^{
     [self dealTaskInfo:taskInfo];
+    //    });
 }
 
 - (void)dealTaskInfo:(ZZDownloadTaskInfo *)taskInfo
@@ -73,7 +77,7 @@ NSString * const ZZDownloadTaskGroupNotifyUiNotification = @"ZZDownloadTaskGroup
     ZZDownloadBaseEntity *entity = [taskInfo recoverEntity];
     NSString *aggregationKey = [entity aggregationKey];
     __block ZZDownloadTaskGroup *group = self.allTaskGroupInfo[aggregationKey];
-   
+    
     if (!group) {
         NSString *type = [entity aggregationType];
         if ([BiliDownloadValidGroupTask containsObject:type]) {
@@ -82,12 +86,10 @@ NSString * const ZZDownloadTaskGroupNotifyUiNotification = @"ZZDownloadTaskGroup
             self.allTaskGroupInfo[aggregationKey] = group;
         }
     }
-    if (!group.taskInfoDict[entity.entityKey]) {
-        [entity downloadCoverWithDownloadStartBlock:nil];
-    }
-    ZZDownloadTaskInfo *oldtaskInfo = group.taskInfoDict[entity.entityKey];
+    ZZDownloadTaskGroupState originstate = group.state;
+    //    ZZDownloadTaskInfo *oldtaskInfo = group.taskInfoDict[entity.entityKey];
     group.taskInfoDict[entity.entityKey] = taskInfo;
- 
+    
     if (taskInfo.state == ZZDownloadStateRemoved) {
         [group.taskInfoDict removeObjectForKey:entity.entityKey];
     }
@@ -99,32 +101,24 @@ NSString * const ZZDownloadTaskGroupNotifyUiNotification = @"ZZDownloadTaskGroup
     group.state = ZZDownloadTaskGroupStateWaiting;
     group.totalCount = group.taskInfoDict.allKeys.count;
     
-    if (!oldtaskInfo) {
-        if (taskInfo.state == ZZDownloadStateDownloaded) {
-            group.downloadedCount += 1;
-        } else if (taskInfo.state == ZZDownloadStateDownloading) {
-            group.runningCount += 1;
+    __block int32_t runningcount = 0;
+    __block int32_t downloadedcount = 0;
+    __block int32_t waitingCount = 0;
+    
+    [group.taskInfoDict enumerateKeysAndObjectsUsingBlock:^(NSString *key, ZZDownloadTaskInfo *info, BOOL *stop){
+        if (info.state == ZZDownloadStateDownloaded) {
+            downloadedcount += 1;
+        } else if (info.state == ZZDownloadStateDownloading) {
+            runningcount += 1;
         } else if (taskInfo.state == ZZDownloadStateParsing || taskInfo.state == ZZDownloadStateDownloadingCover || taskInfo.state == ZZDownloadStateDownloadingDanmaku || taskInfo.state == ZZDownloadStateWaiting || taskInfo.state == ZZDownloadStateFail) {
-            group.watingCount += 1;
+            waitingCount += 1;
         }
-    } else {
-        if (taskInfo.lastestState != taskInfo.state) {
-            if (taskInfo.state == ZZDownloadStateDownloaded) {
-                group.downloadedCount += 1;
-            } else if (taskInfo.state == ZZDownloadStateDownloading) {
-                group.runningCount += 1;
-            } else if (taskInfo.state == ZZDownloadStateParsing || taskInfo.state == ZZDownloadStateDownloadingCover || taskInfo.state == ZZDownloadStateDownloadingDanmaku || taskInfo.state == ZZDownloadStateWaiting || taskInfo.state == ZZDownloadStateFail) {
-                group.watingCount += 1;
-            }
-            if (taskInfo.lastestState == ZZDownloadStateDownloaded) {
-                group.downloadedCount -= 1;
-            } else if (taskInfo.lastestState == ZZDownloadStateDownloading) {
-                group.runningCount -= 1;
-            } else if (taskInfo.lastestState == ZZDownloadStateParsing || taskInfo.state == ZZDownloadStateDownloadingCover || taskInfo.state == ZZDownloadStateDownloadingDanmaku || taskInfo.state == ZZDownloadStateWaiting || taskInfo.state == ZZDownloadStateFail) {
-                group.watingCount -= 1;
-            }
-        }
-    }
+    }];
+    
+    group.runningCount = runningcount;
+    group.downloadedCount = downloadedcount;
+    group.watingCount = waitingCount;
+    
     if (group.runningCount > 0) {
         group.state = ZZDownloadTaskGroupStateDownloading;
     } else {
@@ -136,7 +130,8 @@ NSString * const ZZDownloadTaskGroupNotifyUiNotification = @"ZZDownloadTaskGroup
     if (group.downloadedCount == group.totalCount) {
         group.state = ZZDownloadTaskGroupStateDownloaded;
     }
-    if (group.taskInfoDict.allKeys.count == 0) {
+    if (group.taskInfoDict.allKeys.count == 0 && group.key) {
+        group.willRemove = YES;
         [self.allTaskGroupInfo removeObjectForKey:group.key];
     }
     
@@ -146,9 +141,9 @@ NSString * const ZZDownloadTaskGroupNotifyUiNotification = @"ZZDownloadTaskGroup
         self.allTaskNotificationTimeDict[group.key] = [NSNumber numberWithLong:0];
     }
     uint64_t old = [self.allTaskNotificationTimeDict[group.key] longValue];
-    self.allTaskNotificationTimeDict[group.key] = [NSNumber numberWithLong:now];
-    if (now - old > 1000) {
-            [[NSNotificationCenter defaultCenter] postNotificationName:ZZDownloadTaskGroupNotifyUiNotification object:group];
+    if (now - old > 1000 || group.state != originstate) {
+        self.allTaskNotificationTimeDict[group.key] = [NSNumber numberWithLong:now];
+        [[NSNotificationCenter defaultCenter] postNotificationName:ZZDownloadTaskGroupNotifyUiNotification object:group];
     }
 }
 @end

@@ -10,12 +10,14 @@
 
 @class BiliVideo;
 
-@interface BiliDownloadAVEntity : ZZDownloadBaseEntity 
+@interface BiliDownloadAVEntity : ZZDownloadBaseEntity
 
 @property (nonatomic) NSString *av_id;
 @property (nonatomic) int32_t page;
 
 + (NSString *)getEntityKeyWithAvid:(NSString *)av_id page:(int32_t)page;
+
+@property (nonatomic) NSString *typeTag;
 
 @property (nonatomic) NSString *from;
 @property (nonatomic) NSString *cid;

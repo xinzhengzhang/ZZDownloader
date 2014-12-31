@@ -7,7 +7,7 @@
 //
 
 #import "ZZDownloadTask.h"
-
+#import "ZZDownloadTaskManagerV2.h"
 NSString * const ZZDownloadTaskErrorDomain = @"ZZDownloadTaskErrorDomain";
 
 @interface ZZDownloadTask ()
@@ -26,41 +26,97 @@ NSString * const ZZDownloadTaskErrorDomain = @"ZZDownloadTaskErrorDomain";
     return self;
 }
 
+#if BILITEST==1
+static NSRecursiveLock *lock;
++ (void)load
+{
+    lock = [NSRecursiveLock new];
+}
+
+- (void)writelog:(NSString *)log
+{
+    [lock lock];
+    ZZDownloadBaseEntity *entity = [self recoverEntity];
+    NSString *path = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES)[0];
+    path = [path stringByAppendingPathComponent:ZZDownloadTaskManagerTaskDir];
+    path = [path stringByAppendingPathComponent:[[entity destinationRootDirPath] stringByAppendingPathComponent:@"zzlog"]];
+    NSFileHandle* fh = [NSFileHandle fileHandleForWritingAtPath:path];
+    if ( !fh ) {
+        [[NSFileManager defaultManager] createFileAtPath:path contents:nil attributes:nil];
+        fh = [NSFileHandle fileHandleForWritingAtPath:path];
+    }
+    @try {
+        [fh seekToEndOfFile];
+        [fh writeData:[log dataUsingEncoding:NSUTF8StringEncoding]];
+    }
+    @catch (NSException *exception) {
+        @throw exception;
+    }
+    @finally {
+        [fh closeFile];
+    }
+    [lock unlock];
+}
+
+#endif
+
 - (ZZDownloadBaseEntity *)recoverEntity
 {
-    volatile NSString *type = self.entityType;
+    NSString *type = self.entityType;
     if ([ZZDownloadValidEntity containsObject:type]) {
-        Class class = NSClassFromString((NSString *)type);
+        Class class = NSClassFromString(type);
         ZZDownloadBaseEntity *entity = [[class alloc] init];
-        [entity setValuesForKeysWithDictionary:self.argv];
+        NSDictionary *dictionary = self.argv;
+        for (NSString *key in dictionary) {
+            __autoreleasing id value = [dictionary objectForKey:key];
+            if ([value isEqual:NSNull.null]) value = nil;
+            
+           	__autoreleasing id validatedValue = value;
+            
+            @try {
+                if (![entity validateValue:&validatedValue forKey:key error:nil]) continue;
+                
+                [entity setValue:validatedValue forKey:key];
+                
+                continue;
+            } @catch (NSException *ex) {
+                NSLog(@"*** Caught exception setting key \"%@\" : %@", key, ex);
+                
+                // Fail fast in Debug builds.
+#if DEBUG
+                @throw ex;
+#endif
+                continue;
+            }
+        }
         return entity;
     }
     return nil;
 }
 
-- (NSMutableArray *)sectionsDownloadedList
-{
-    if (!_sectionsDownloadedList) {
-        _sectionsDownloadedList = [NSMutableArray array];
-    }
-    return _sectionsDownloadedList;
-}
-
-- (NSMutableArray *)sectionsLengthList
-{
-    if (!_sectionsLengthList) {
-        _sectionsLengthList = [NSMutableArray array];
-    }
-    return _sectionsLengthList;
-}
-
-- (NSMutableArray *)sectionsContentTime
-{
-    if (!_sectionsContentTime) {
-        _sectionsContentTime = [NSMutableArray array];
-    }
-    return _sectionsContentTime;
-}
+//- (NSMutableArray *)sectionsDownloadedList
+//{
+//    if (!_sectionsDownloadedList) {
+//        _sectionsDownloadedList = [NSMutableArray array];
+//    }
+//    return _sectionsDownloadedList;
+//}
+//
+//- (NSMutableArray *)sectionsLengthList
+//{
+//    if (!_sectionsLengthList) {
+//        _sectionsLengthList = [NSMutableArray array];
+//    }
+//    return _sectionsLengthList;
+//}
+//
+//- (NSMutableArray *)sectionsContentTime
+//{
+//    if (!_sectionsContentTime) {
+//        _sectionsContentTime = [NSMutableArray array];
+//    }
+//    return _sectionsContentTime;
+//}
 
 - (NSArray *)getSectionsContentTimes
 {
@@ -72,12 +128,12 @@ NSString * const ZZDownloadTaskErrorDomain = @"ZZDownloadTaskErrorDomain";
     ZZDownloadTask *task = [[ZZDownloadTask alloc] init];
     task.state = self.state;
     task.command = self.command;
-    task.key = self.key;
-    task.entityType = self.entityType;
+    task.key = [self.key copy];
+    task.entityType = [self.entityType copy];
     task.taskArrangeType = self.taskArrangeType;
     task.weight = self.weight;
     task.argv = [NSDictionary dictionaryWithDictionary:self.argv];
-    task.lastestError = self.lastestError;
+    task.lastestError = [self.lastestError copy];
     task.sectionsDownloadedList = [NSMutableArray arrayWithArray:self.sectionsDownloadedList];
     task.sectionsContentTime = [NSMutableArray arrayWithArray:self.sectionsContentTime];
     task.sectionsLengthList = [NSMutableArray arrayWithArray:self.sectionsLengthList];
@@ -116,6 +172,9 @@ NSString * const ZZDownloadTaskErrorDomain = @"ZZDownloadTaskErrorDomain";
 #pragma mark - interface
 - (void)startWithStartSuccessBlock:(void (^)(void))block;
 {
+#if BILITEST==1
+    [self writelog:[NSString stringWithFormat:@"\ntask:%@ start command = %lu state =%lu",self.key, self.command, self.state]];
+#endif
     if (self.command == ZZDownloadAssignedCommandNone || self.command == ZZDownloadAssignedCommandPause || self.command == ZZDownloadAssignedCommandRemove || self.command == ZZDownloadAssignedCommandInterruptPaused) {
         if (self.state == ZZDownloadStateFail ) {
             self.triedCount += 1;
@@ -132,8 +191,18 @@ NSString * const ZZDownloadTaskErrorDomain = @"ZZDownloadTaskErrorDomain";
     }
 }
 
+#if BILITEST==1
+- (void)writeLog:(NSString *)log
+{
+    [self writelog:[NSString stringWithFormat:@"\n%@",log]];
+}
+#endif
+
 - (void)pauseWithPauseSuccessBlock:(void (^)(void))block ukeru:(BOOL)ukeru
 {
+#if BILITEST==1
+    [self writelog:[NSString stringWithFormat:@"\ntask:%@ pause command = %lu state =%lu",self.key, self.command, self.state]];
+#endif
     if (self.command != ZZDownloadAssignedCommandPause && self.command != ZZDownloadAssignedCommandRemove) {
         if (self.state == ZZDownloadStateWaiting || self.state == ZZDownloadStateDownloading || self.state == ZZDownloadStateNothing || self.state == ZZDownloadStateParsing || self.state == ZZDownloadStateDownloadingCover || self.state == ZZDownloadStateDownloadingDanmaku || self.state == ZZDownloadStateFail) {
             if (ukeru) {
@@ -148,6 +217,9 @@ NSString * const ZZDownloadTaskErrorDomain = @"ZZDownloadTaskErrorDomain";
 
 - (void)removeWithRemoveSuccessBlock:(void (^)(void))block
 {
+#if BILITEST==1
+    [self writelog:[NSString stringWithFormat:@"\ntask:%@ remove command = %lu state =%lu",self.key, self.command, self.state]];
+#endif
     if (self.command != ZZDownloadAssignedCommandRemove) {
         self.command = ZZDownloadAssignedCommandRemove;
         block();

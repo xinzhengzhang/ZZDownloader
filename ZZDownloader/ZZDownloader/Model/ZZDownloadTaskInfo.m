@@ -8,7 +8,7 @@
 
 #import "ZZDownloadTaskInfo.h"
 #import "ZZDownloadTask+Helper.h"
-
+#import <objc/runtime.h>
 @implementation ZZDownloadTaskInfo
 
 - (id)init
@@ -19,46 +19,20 @@
     return self;
 }
 
-- (id)copyWithZone:(NSZone *)zone
+- (void)updateSelfByArgv:(NSDictionary *)argv
 {
-    ZZDownloadTaskInfo *info = [[ZZDownloadTaskInfo allocWithZone:zone] init];
-    info.state = self.state;
-    info.command = self.command;
-    info.key = [self.key copyWithZone:zone];
-    info.entityType = [self.entityType copyWithZone:zone];
-    info.argv = [self.argv copyWithZone:zone];
-    info.lastestError = [self.lastestError copyWithZone:zone];
-    info.triedCount = self.triedCount;
-    info.sectionsContentTime = [self.sectionsContentTime copyWithZone:zone];
-    info.sectionsDownloadedList = [self.sectionsDownloadedList copyWithZone:zone];
-    info.sectionsLengthList = [self.sectionsLengthList copyWithZone:zone];
-    info.index = self.index;
-    info.lastestState = self.lastestState;
-    return info;
-}
-
-- (NSArray *)sectionsDownloadedList
-{
-    if (!_sectionsDownloadedList) {
-        _sectionsDownloadedList = [NSArray array];
+    Class class = NSClassFromString(self.entityType);
+    if ([class isSubclassOfClass:[ZZDownloadBaseEntity class]]) {
+        NSArray *argkeys = [class argvKeys];
+        [argkeys enumerateObjectsUsingBlock:^(id key, NSUInteger index, BOOL *stop) {
+            id x = argv[key];
+            if (x) {
+                void *flag = (void *)[class argvKeysFlags][index];
+                objc_setAssociatedObject(self, flag, x, OBJC_ASSOCIATION_RETAIN);
+                
+            }
+        }];
     }
-    return _sectionsDownloadedList;
-}
-
-- (NSArray *)sectionsLengthList
-{
-    if (!_sectionsLengthList) {
-        _sectionsLengthList = [NSArray array];
-    }
-    return _sectionsLengthList;
-}
-
-- (NSArray *)sectionsContentTime
-{
-    if (!_sectionsContentTime) {
-        _sectionsContentTime = [NSArray array];
-    }
-    return _sectionsContentTime;
 }
 
 - (NSArray *)getSectionsTotalLength
@@ -85,7 +59,7 @@
 - (long long)getDownloadedLength
 {
     long long t = 0;
-    for (NSNumber *n in [self.sectionsDownloadedList copy]) {
+    for (NSNumber *n in self.sectionsDownloadedList) {
         long long x = [n longLongValue];
         t += x;
     }
@@ -110,7 +84,14 @@
     if ([ZZDownloadValidEntity containsObject:type]) {
         Class class = NSClassFromString(type);
         ZZDownloadBaseEntity *entity = [[class alloc] init];
-        [entity setValuesForKeysWithDictionary:self.argv];
+        NSArray *argkeys = [class argvKeys];
+        [argkeys enumerateObjectsUsingBlock:^(id key, NSUInteger index, BOOL *stop) {
+            void *flag = (void *)[class argvKeysFlags][index];
+            id value = objc_getAssociatedObject(self, flag);
+            if (value) {
+                [entity setValue:value forKey:key];
+            }
+        }];
         return entity;
     }
     return nil;
@@ -157,6 +138,8 @@
             return @"地址解析中...";
         } else if (self.state == ZZDownloadStateFail) {
             return @"下载失败等待重新开始";
+        } else if (self.state == ZZDownloadStateInvalid) {
+            return @"尝试删除任务重新下载";
         }
     }
     if (self.command == ZZDownloadAssignedCommandNone) {

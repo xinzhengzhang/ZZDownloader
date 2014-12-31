@@ -15,20 +15,20 @@ typedef NS_ENUM(NSUInteger, ZZDownloadTaskGroupState) {
     ZZDownloadTaskGroupStatePaused
 };
 
-@interface ZZDownloadTaskGroup : NSObject <NSCopying>
+@interface ZZDownloadTaskGroup : NSObject
 
-@property (nonatomic) NSString *title;
-@property (nonatomic) NSString *coverUrl;
-@property (nonatomic) NSString *key;
-@property (nonatomic) NSString *realKey;
-@property (nonatomic) ZZDownloadTaskGroupState state;
-@property (nonatomic) NSInteger totalCount;
-@property (nonatomic) int32_t downloadedCount;
-@property (nonatomic) int32_t runningCount;
-@property (nonatomic) int32_t watingCount;
+@property (atomic) NSString *title;
+@property (atomic) NSString *coverUrl;
+@property (atomic) NSString *key;
+@property (atomic) NSString *realKey;
+@property (atomic) ZZDownloadTaskGroupState state;
+@property (atomic) NSInteger totalCount;
+@property (atomic) int32_t downloadedCount;
+@property (atomic) int32_t runningCount;
+@property (atomic) int32_t watingCount;
 
- @property (nonatomic) NSMutableDictionary *taskInfoDict;
+@property (atomic) NSMutableDictionary *taskInfoDict;
 
-@property (nonatomic) int32_t index;
-
+@property (atomic) int32_t index;
+@property (atomic) BOOL willRemove;
 @end

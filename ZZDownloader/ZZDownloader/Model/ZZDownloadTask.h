@@ -10,9 +10,9 @@
 #import <Mantle/Mantle.h>
 #import "ZZDownloadBaseEntity.h"
 
-@class ZZDownloadBaseEntity;
-
 #define ZZDownloadValidEntity @[@"BiliDownloadAVEntity", @"BiliDownloadEpEntity"]
+
+@class ZZDownloadBaseEntity;
 
 typedef NS_ENUM(NSUInteger, ZZDownloadState) {
     ZZDownloadStateNothing = 1234,
@@ -54,17 +54,17 @@ typedef NS_ENUM(NSUInteger, ZZDownloadTaskArrangeType) {
 // MARK: subClass has to implement ZZDownloadParserProtocol
 @interface ZZDownloadTask : MTLModel <MTLJSONSerializing>
 
-@property (nonatomic) ZZDownloadState state;
-@property (nonatomic) ZZDownloadAssignedCommand command;
-@property (nonatomic) NSString *key;
+@property (atomic) ZZDownloadState state;
+@property (atomic) ZZDownloadAssignedCommand command;
+@property (atomic) NSString *key;
 @property (atomic) NSString *entityType;
 
-@property (nonatomic) ZZDownloadTaskArrangeType taskArrangeType;
-@property (nonatomic) int32_t weight;
+@property (atomic) ZZDownloadTaskArrangeType taskArrangeType;
+@property (atomic) int32_t weight;
 
-@property (nonatomic, strong) NSDictionary *argv;
+@property (atomic) NSDictionary *argv;
 
-@property (nonatomic) NSError *lastestError;
+@property (atomic) NSError *lastestError;
 
 
 - (void)startWithStartSuccessBlock:(void (^)(void))block;
@@ -78,6 +78,9 @@ typedef NS_ENUM(NSUInteger, ZZDownloadTaskArrangeType) {
 - (ZZDownloadBaseEntity *)recoverEntity;
 
 - (ZZDownloadTask *)deepCopy;
+#if BILITEST==1
+- (void)writeLog:(NSString *)log;
+#endif
 // used for task info
 
 @property (nonatomic) int32_t triedCount;
@@ -87,8 +90,8 @@ typedef NS_ENUM(NSUInteger, ZZDownloadTaskArrangeType) {
 - (CGFloat)getProgress;
 - (NSArray *)getSectionsContentTimes;
 
-@property (nonatomic) NSMutableArray *sectionsLengthList;
-@property (nonatomic) NSMutableArray *sectionsDownloadedList;
-@property (nonatomic) NSMutableArray *sectionsContentTime;
+@property (atomic) NSMutableArray *sectionsLengthList;
+@property (atomic) NSMutableArray *sectionsDownloadedList;
+@property (atomic) NSMutableArray *sectionsContentTime;
 
 @end

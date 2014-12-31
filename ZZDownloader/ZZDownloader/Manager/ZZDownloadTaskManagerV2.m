@@ -8,7 +8,6 @@
 
 #import "ZZDownloadTaskManagerV2.h"
 #import "ZZDownloadTask.h"
-#import "ZZDownloadOpQueue.h"
 #import "ZZDownloadNotifyManager.h"
 #import "ZZDownloadTaskGroupManager.h"
 #import "Reachability.h"
@@ -18,12 +17,15 @@
 #import "ZZDownloadTask+Helper.h"
 #import "ZZDownloader.h"
 
+#define ZZDownloadOpQueueName @"ZZDownloadOpThread"
 @interface ZZDownloadTaskManagerV2 () <ZZDownloadTaskOperationDelegate>
 
 @property (nonatomic) NSMutableDictionary *allTaskDict;
 @property (nonatomic) BOOL couldDownload;
 @property (nonatomic, copy) void (^CFCompleteBlock)(NSString *key);
-@property (nonatomic, copy) void (^t)();
+@property (nonatomic) NSThread *opThread;
+@property (nonatomic) NSSet *runLoopModes;
+
 @end
 
 @implementation ZZDownloadTaskManagerV2
@@ -37,6 +39,9 @@
         manager = [ZZDownloadTaskManagerV2 new];
         manager.allTaskDict = [NSMutableDictionary dictionary];
         manager.couldDownload = YES;
+        manager.opThread = [[NSThread alloc] initWithTarget:self selector:@selector(networkRequestThreadEntryPoint:) object:nil];
+        [manager.opThread start];
+        manager.runLoopModes = [NSSet setWithObject:NSRunLoopCommonModes];
         
         NSString *cacheDir = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES)[0];
         if(![[NSFileManager defaultManager] createDirectoryAtPath:[cacheDir stringByAppendingPathComponent:ZZDownloadTaskManagerTaskFileDir] withIntermediateDirectories:YES attributes:nil error:nil]) {
@@ -47,46 +52,9 @@
             NSLog(@"Failed to create section directory at %@", ZZDownloadTaskManagerTaskDir);
         }
         
-        __weak __typeof(manager)weakSelf = manager;
         
         manager.CFCompleteBlock = ^(NSString *key){
-            [[ZZDownloadOpQueue shared] addOperationWithBlock: ^{
-                __strong __typeof(weakSelf)strongSelf = weakSelf;
-                
-                ZZDownloadTask *task = strongSelf.allTaskDict[key];
-                if (task.state == ZZDownloadStateDownloaded) {
-                    [manager executeOperationByWeight];
-                    [manager writeTaskToDisk:task];
-                    [manager notifyQueueUpdateMessage:task];
-                } else if (task.command == ZZDownloadAssignedCommandRemove){
-                    [manager deleteTask:key];
-                    [manager executeOperationByWeight];
-                } else if (task.command == ZZDownloadAssignedCommandPause) {
-                    task.state = ZZDownloadStateRealPaused;
-                    task.command = ZZDownloadAssignedCommandNone;
-                    task.taskArrangeType = ZZDownloadTaskArrangeTypeUnArranged;
-                    [manager executeOperationByWeight];
-                    [manager writeTaskToDisk:task];
-                    [manager notifyQueueUpdateMessage:task];
-                }else if (task.command == ZZDownloadAssignedCommandInterruptPaused) {
-                    task.state = ZZDownloadStateInterrputPaused;
-                    task.command = ZZDownloadAssignedCommandNone;
-                    task.taskArrangeType = ZZDownloadTaskArrangeTypeUnArranged;
-                    [manager executeOperationByWeight];
-                    [manager writeTaskToDisk:task];
-                    [manager notifyQueueUpdateMessage:task];
-                } else {
-                    if (task.taskArrangeType == ZZDownloadTaskArrangeTypeUnArranged) {
-                        return ;
-                    } else {
-                        task.taskArrangeType = ZZDownloadTaskArrangeTypeUnArranged;
-                        [manager dealFailTask:task.key];
-                        [manager writeTaskToDisk:task];
-                        [manager notifyQueueUpdateMessage:task];
-                    }
-                    
-                }
-            }];
+            [manager performSelector:@selector(taskCompleteCallBackHandler:) onThread:manager.opThread withObject:key waitUntilDone:YES modes:[manager.runLoopModes allObjects]];
         };
         ZZDownloadOperation *bop = [ZZDownloadOperation new];
         bop.command = ZZDownloadCommandBuild;
@@ -94,6 +62,52 @@
         
     });
     return manager;
+}
+
+- (void)taskCompleteCallBackHandler:(NSString *)key
+{
+    ZZDownloadTask *task = self.allTaskDict[key];
+    if (task.state == ZZDownloadStateDownloaded) {
+        [self executeOperationByWeight];
+        [self writeTaskToDisk:task];
+        [self notifyQueueUpdateMessage:task];
+    } else if (task.command == ZZDownloadAssignedCommandRemove){
+        [self deleteTask:key];
+        [self executeOperationByWeight];
+    } else if (task.command == ZZDownloadAssignedCommandPause) {
+        task.state = ZZDownloadStateRealPaused;
+        task.command = ZZDownloadAssignedCommandNone;
+        task.taskArrangeType = ZZDownloadTaskArrangeTypeUnArranged;
+        [self executeOperationByWeight];
+        [self writeTaskToDisk:task];
+        [self notifyQueueUpdateMessage:task];
+    }else if (task.command == ZZDownloadAssignedCommandInterruptPaused) {
+        task.state = ZZDownloadStateInterrputPaused;
+        task.command = ZZDownloadAssignedCommandNone;
+        task.taskArrangeType = ZZDownloadTaskArrangeTypeUnArranged;
+        [self executeOperationByWeight];
+        [self writeTaskToDisk:task];
+        [self notifyQueueUpdateMessage:task];
+    } else {
+        if (task.taskArrangeType == ZZDownloadTaskArrangeTypeUnArranged) {
+            return ;
+        } else {
+            task.taskArrangeType = ZZDownloadTaskArrangeTypeUnArranged;
+            [self dealFailTask:task.key];
+            [self writeTaskToDisk:task];
+            [self notifyQueueUpdateMessage:task];
+        }
+    }
+}
+
++ (void)networkRequestThreadEntryPoint:(id)__unused object {
+    @autoreleasepool {
+        [[NSThread currentThread] setName:ZZDownloadOpQueueName];
+        
+        NSRunLoop *runLoop = [NSRunLoop currentRunLoop];
+        [runLoop addPort:[NSMachPort port] forMode:NSDefaultRunLoopMode];
+        [runLoop run];
+    }
 }
 
 - (BOOL)isDownloading
@@ -122,15 +136,22 @@
 
 - (void)addOp:(ZZDownloadOperation *)operation withEntity:(ZZDownloadBaseEntity *)entity block:(void (^)(id))block
 {
-    [[ZZDownloadOpQueue shared] addOperationWithBlock:^{
-        [self doOp:operation entity:entity block:block];
-    }];
+    NSMutableDictionary *dict = [NSMutableDictionary dictionaryWithDictionary:@{@"op": operation}];
+    if (entity) dict[@"entity"] = entity;
+    if (block) dict[@"block"] = block;
+    [self performSelector:@selector(doOpWrap:) onThread:self.opThread withObject:dict waitUntilDone:NO modes:[self.runLoopModes allObjects]];
 }
+
+- (void)doOpWrap:(NSDictionary *)wrap
+{
+    NSAssert(wrap[@"op"], @"opWrap error");
+    [self doOp:wrap[@"op"] entity:wrap[@"entity"] block:wrap[@"block"]];
+}
+
 - (void)doOp:(ZZDownloadOperation *)operation entity:(ZZDownloadBaseEntity *)entity block:(void (^)(id))block
 {
     ZZDownloadQueueAssert(ZZDownloadOpQueueName);
     
-    //    NSLog(@"do op operation=%u key=%@", operation.command, operation.key);
     if (operation.command == ZZDownloadCommandBuild) {
         [self buildAllTaskInfo];
         [self executeOperationByWeight];
@@ -176,7 +197,7 @@
             [self startDownloadTask:operation.key];
         } else {
             dispatch_async(dispatch_get_main_queue(), ^{
-                [[[UIAlertView alloc] initWithTitle:@"网络设置异常" message:@"如需在蜂窝下开启下载请在设置中勾选> <" delegate:nil cancelButtonTitle:@"知道啦" otherButtonTitles:nil] show];
+                [[[UIAlertView alloc] initWithTitle:@"网络设置异常" message:@"如需在2G/3G环境下下载\n请在设置中勾选> <" delegate:nil cancelButtonTitle:@"知道啦" otherButtonTitles:nil] show];
             });
         }
         return;
@@ -222,11 +243,10 @@
         rtask.taskArrangeType = ZZDownloadTaskArrangeTypeUnArranged;
         //        rtask.command = ZZDownloadAssignedCommandNone;
         
-        [self notifyQueueUpdateMessage:rtask];
         if (rtask.key) {
             self.allTaskDict[rtask.key] = rtask;
         }
-        if (rtask.state == ZZDownloadStateDownloading) {
+        if (rtask.state == ZZDownloadStateDownloading || rtask.state == ZZDownloadStateParsing || rtask.state == ZZDownloadStateDownloadingCover || rtask.state == ZZDownloadStateDownloadingDanmaku || rtask.state == ZZDownloadStateWaiting) {
             rtask.state = ZZDownloadStateNothing;
             rtask.command = ZZDownloadAssignedCommandStart;
             NSArray *keys = [self.allTaskDict keysSortedByValueUsingComparator:^(ZZDownloadTask *task1, ZZDownloadTask *task2) {
@@ -236,6 +256,7 @@
                 rtask.weight = [self.allTaskDict[keys.firstObject] weight] -1;
             }
         }
+        [self notifyQueueUpdateMessage:rtask];
     }
 }
 
@@ -601,7 +622,7 @@
     if (self.enableDownloadUnderWWAN) {
         return YES;
     }
-    Reachability* curReach = [Reachability reachabilityWithHostname:@"www.baidu.com"];
+    Reachability* curReach = [Reachability reachabilityWithHostName:@"www.baidu.com"];
     NetworkStatus status = [curReach currentReachabilityStatus];
     NSParameterAssert([curReach isKindOfClass: [Reachability class]]);
     if (status == NotReachable) {
@@ -645,34 +666,20 @@
 #pragma mark - cfOperation delegate
 - (void)updateTaskWithBlock:(void (^)())block
 {
-    NSCondition *condit = [NSCondition new];
-    __block volatile BOOL dealed = NO;
-    
-    [[ZZDownloadOpQueue shared] addOperationWithBlock:^{
+    if ([[[NSThread currentThread] name] isEqualToString:self.opThread.name]) {
         block();
-        [condit lock];
-        dealed = YES;
-        [condit signal];
-        [condit unlock];
-    }];
-    
-    [condit lock];
-    while (!dealed) {
-        [condit waitUntilDate:[NSDate dateWithTimeIntervalSinceNow:1]];
+    } else {
+        [self performSelector:@selector(updateTaskWithBlock:) onThread:self.opThread withObject:block waitUntilDone:YES modes:[self.runLoopModes allObjects]];
     }
-    [condit unlock];
-    
 }
 
 - (void)notifyUpdate:(NSString *)key
 {
     ZZDownloadTask *task = self.allTaskDict[key];
     if (!task) return;
-    ZZDownloadTask *t = task;
-    [[ZZDownloadOpQueue shared] addOperationWithBlock:^{
-        [self writeTaskToDisk:t];
-    }];
-    [self notifyQueueUpdateMessage:t];
+    [self performSelector:@selector(writeTaskToDisk:) onThread:self.opThread withObject:task waitUntilDone:YES modes:[self.runLoopModes allObjects]];
+    
+    [self notifyQueueUpdateMessage:task];
 }
 
 @end

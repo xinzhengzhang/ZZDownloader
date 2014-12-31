@@ -7,13 +7,14 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "ZZDownloadTaskInfo.h"
 #import "BiliDownloadEpEntity.h"
 #import "BiliDownloadAVEntity.h"
 #import "BiliDownloadAvGroup.h"
 #import "ZZDownloadNotifyManager.h"
 #import "ZZDownloadTaskGroupManager.h"
 #import "ZZDownloadTaskManagerV2.h"
+
+@class ZZDownloadTaskInfo;
 
 @interface BiliDownloadManager : NSObject
 
