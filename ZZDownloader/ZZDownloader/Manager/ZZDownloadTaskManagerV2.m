@@ -452,7 +452,7 @@
             int32_t added = [[ZZDownloadBackgroundSessionManager shared] addCacheTaskByTask:task];
             [self writeTaskToDisk:task];
             addCount += added;
-            if (addCount > 5) {
+            if (addCount > 2) {
                 *stop = YES;
             }
         }

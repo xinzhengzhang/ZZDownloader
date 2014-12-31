@@ -10,7 +10,7 @@
 #import <Mantle/Mantle.h>
 #import "ZZDownloadBaseEntity.h"
 
-#define ZZDownloadValidEntity @[@"BiliDownloadAVEntity", @"BiliDownloadEpEntity"]
+#define ZZDownloadValidEntity @[@"SampleEntity"]
 
 @class ZZDownloadBaseEntity;
 

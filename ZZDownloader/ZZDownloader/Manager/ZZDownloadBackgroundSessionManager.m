@@ -26,8 +26,8 @@
     dispatch_once(&onceToken, ^{
         if ([[[UIDevice currentDevice] systemVersion] floatValue] < 7.0) {
             manager = nil;
+            return;
         }
-        return ;
         NSURLSessionConfiguration *config;
         if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 8.0) {
             config = [NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:@"com.bilibi.session.manager.background.identifier.v3"];
@@ -164,6 +164,10 @@
         NSString *tmpPath = [ZZDownloadTaskCFNetworkOperation getBackgroundDownloadTempPath:key section:section typetag:typetag];
         [[NSFileManager new] removeItemAtPath:tmpPath error:nil];
         return [NSURL fileURLWithPath:tmpPath];
+    }];
+    
+    [self setDownloadTaskDidWriteDataBlock:^(NSURLSession *session, NSURLSessionDownloadTask *downloadTask, int64_t bytesWritten, int64_t totalBytesWritten, int64_t totalBytesExpectedToWrite){
+    
     }];
 }
 

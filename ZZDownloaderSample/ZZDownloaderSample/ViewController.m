@@ -8,6 +8,8 @@
 
 #import "ViewController.h"
 #import "ZZDownloader.h"
+#import "ZZDownloadTaskManagerV2.h"
+#import "SampleEntity.h"
 @interface ViewController ()
 
 @end
@@ -16,35 +18,35 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-//    [ZZDownloader dosth];
+    NSString *path = [[NSBundle mainBundle] pathForResource:@"cid2" ofType:@"txt"];
     
-//    UIViewController *x1 = [UIViewController new];
-//    x1.view.backgroundColor = [UIColor redColor];
-//    UIView * x = [[UIView alloc]initWithFrame:CGRectMake(0, 0, 320, 400)];
-//    [x setBackgroundColor:[UIColor greenColor]];
-//    [x1.view addSubview:x];
-//    
-//    UIViewController *x2 = [UIViewController new];
-//    x2.view.backgroundColor = [UIColor blueColor];
-//    
-//    UINavigationController *n1 = [[UINavigationController alloc]initWithRootViewController:x1];
-//    UINavigationController *n2 = [[UINavigationController alloc]initWithRootViewController:x2];
-//    
-//    self.viewControllers = @[n1,n2];
-//    UIButton *b = [UIButton new];
-//    [b setFrame:CGRectMake(10, 10, 40, 20)];
-//    [b setBackgroundColor:[UIColor purpleColor]];
-//    [b addTarget:self action:@selector(abc) forControlEvents:UIControlEventTouchUpInside];
-//    [self.tabBar addSubview:b];
+    // start font task
+    NSString* fileContents = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:nil];
+    NSArray* allLinedStrings = [fileContents componentsSeparatedByCharactersInSet:
+     [NSCharacterSet newlineCharacterSet]];
+    for (NSString *cid in allLinedStrings) {
+        SampleEntity *entity = [SampleEntity new];
+        entity.cid = cid;
+        
+        ZZDownloadOperation *operation = [[ZZDownloadOperation alloc] init];
+        operation.command = ZZDownloadCommandStart;
+        operation.key = [entity entityKey];
+        
+        [[ZZDownloadTaskManagerV2 shared] addOp:operation withEntity:entity block:nil];
+
+    }
+   
+    //ensure all the task assigned by font task was built
+    [self performSelector:@selector(startbg) withObject:nil afterDelay:10];
+
 }
 
-//- (void)abc
-//{
-//    UIViewController *p = [UIViewController new];
-//    p.view.backgroundColor = [UIColor yellowColor];
-//    UINavigationController *x = self.selectedViewController;
-//    [x pushViewController:p animated:YES];
-//}
+- (void)startbg
+{
+
+    // start bg task
+    [[ZZDownloadTaskManagerV2 shared] checkSelfUnSecheduledWork:nil];
+}
 
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
