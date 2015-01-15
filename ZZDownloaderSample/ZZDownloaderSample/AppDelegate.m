@@ -57,7 +57,7 @@
     [na writeToFile:LogDir atomically:YES encoding:NSUTF8StringEncoding error:nil];
     
     [ZZDownloadBackgroundSessionManager shared];
-    [[ZZDownloadTaskManagerV2 shared] checkSelfUnSecheduledWork:^(id x) {
+    [[ZZDownloadTaskManagerV2 shared] checkSelfUnSecheduledWorkKey:nil block:^(id x) {
         completionHandler();
     }];
 }

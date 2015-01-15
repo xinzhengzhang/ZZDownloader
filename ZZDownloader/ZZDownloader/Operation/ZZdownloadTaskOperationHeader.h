@@ -6,9 +6,6 @@
 //  Copyright (c) 2014 zhangxinzheng. All rights reserved.
 //
 
-#ifndef ibiliplayer_ZZdownloadTaskOperationHeader_h
-#define ibiliplayer_ZZdownloadTaskOperationHeader_h
-
 @protocol ZZDownloadTaskOperationDelegate <NSObject>
 
 - (void)updateTaskWithBlock:(void (^)())block;
@@ -87,4 +84,3 @@ static inline BOOL ZZStateTransitionIsValid(ZZTaskOperationState fromState, ZZTa
         }
     }
 }
-#endif

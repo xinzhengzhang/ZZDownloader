@@ -222,7 +222,7 @@
     ZZDownloadQueueAssert(ZZDownloadOpQueueName);
     
     [self.allTaskDict removeAllObjects];
-    NSArray *filePathList = [self getBiliTaskFilePathList];
+    NSArray *filePathList = [self getTaskFilePathList];
     NSError *error;
     for (NSString *filePath in filePathList) {
         NSData *data = [NSData dataWithContentsOfFile:filePath options:NSDataReadingMappedIfSafe error:&error];
@@ -434,7 +434,7 @@
     NSString *destinationPath = [downloadFolder stringByAppendingPathComponent:[entity destinationRootDirPath]];
     NSString *taskFolder = [cacheDir stringByAppendingPathComponent:ZZDownloadTaskManagerTaskFileDir];
     
-    NSString *targtetPath = [taskFolder stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.bilitask", task.key]];
+    NSString *targtetPath = [taskFolder stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.task", task.key]];
     [[NSFileManager defaultManager] removeItemAtPath:targtetPath error:nil];
     [[NSFileManager defaultManager] removeItemAtPath:destinationPath error:nil];
     
@@ -662,7 +662,7 @@
     NSString *cacheDir = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES)[0];
     NSString *taskFolder = [cacheDir stringByAppendingPathComponent:ZZDownloadTaskManagerTaskFileDir];
     
-    NSString *targtetPath = [taskFolder stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.bilitask", task.key]];
+    NSString *targtetPath = [taskFolder stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.task", task.key]];
     [jsonData writeToFile:targtetPath options:NSDataWritingAtomic error:&error];
     if (error) {
         task.lastestError = [NSError errorWithDomain:ZZDownloadTaskErrorDomain code:ZZDownloadTaskErrorTypeIOError userInfo:@{NSLocalizedDescriptionKey : [NSString stringWithFormat:@"task:%@ write to file fail", task.key], @"originError": error}];
@@ -671,7 +671,7 @@
     return YES;
 }
 
-- (NSArray *)getBiliTaskFilePathList
+- (NSArray *)getTaskFilePathList
 {
     NSString *cacheDir = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES)[0];
     NSString *taskPath = [cacheDir stringByAppendingPathComponent:ZZDownloadTaskManagerTaskFileDir];
@@ -681,7 +681,7 @@
         NSString *fullPath = [taskPath stringByAppendingPathComponent:fileName];
         BOOL x = NO;
         if ([[NSFileManager defaultManager] fileExistsAtPath:fullPath isDirectory:&x]) {
-            if ([[fileName pathExtension] isEqualToString:@"bilitask"]) {
+            if ([[fileName pathExtension] isEqualToString:@"task"]) {
                 [nameList addObject:fullPath];
             }
         }

@@ -11,8 +11,6 @@
 #import "ZZDownloadTaskInfo.h"
 #import <sys/time.h>
 
-#define BiliDownloadValidGroupTask @[@"BiliDownloadAvGroup"]
-
 NSString * const ZZDownloadTaskGroupNotifyUiNotification = @"ZZDownloadTaskGroupNotifyUiNotification";
 
 @interface ZZDownloadTaskGroupManager (){
@@ -76,11 +74,9 @@ NSString * const ZZDownloadTaskGroupNotifyUiNotification = @"ZZDownloadTaskGroup
     
     if (!group) {
         NSString *type = [entity aggregationType];
-        if ([BiliDownloadValidGroupTask containsObject:type]) {
-            Class class = NSClassFromString(type);
-            group = [[class alloc] init];
-            self.allTaskGroupInfo[aggregationKey] = group;
-        }
+        Class class = NSClassFromString(type);
+        group = [[class alloc] init];
+        self.allTaskGroupInfo[aggregationKey] = group;
     }
     ZZDownloadTaskGroupState originstate = group.state;
     group.taskInfoDict[entity.entityKey] = taskInfo;

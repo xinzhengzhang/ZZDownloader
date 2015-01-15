@@ -1,5 +1,5 @@
 //
-//  BiliDownloadAVEntity.m
+//  SampleEntity.m
 //  Pods
 //
 //  Created by zhangxinzheng on 11/14/14.

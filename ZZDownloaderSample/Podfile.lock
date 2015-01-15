@@ -118,6 +118,6 @@ SPEC CHECKSUMS:
   Mantle: d7c5ac734579ec751c58fecbf56189853056c58c
   Reachability: 1ef8adf5c4e3d362f96515d4278f68dad3c26930
   SVProgressHUD: adf9def97327df88dee15e9ad8033fde6961f7b4
-  ZZDownloader: 4364fc65f613adedf2794c3b3ba07d4f5fcf2ae7
+  ZZDownloader: 8ef1540020b76497dd27baa1edf3cc0c433c12a9
 
 COCOAPODS: 0.35.0

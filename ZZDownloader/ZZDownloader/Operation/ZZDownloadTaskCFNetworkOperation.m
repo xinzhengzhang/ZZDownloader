@@ -176,7 +176,7 @@
         self.downloadTask.state = ts;
         
         NSString *destinationPath = [[self downloadFolder] stringByAppendingPathComponent:[entity destinationDirPath]];
-        NSArray *existedFile = [self getBiliTaskFileNameList:destinationPath suffix:@"section"];
+        NSArray *existedFile = [self getTaskFileNameList:destinationPath suffix:@"section"];
         
         self.downloadTask.state = ts;
         
@@ -627,7 +627,7 @@
     return cacheFolder;
 }
 
-- (NSArray *)getBiliTaskFileNameList:(NSString *)dirPath suffix:(NSString *)suffix
+- (NSArray *)getTaskFileNameList:(NSString *)dirPath suffix:(NSString *)suffix
 {
     NSString *taskPath = dirPath;
     NSMutableArray *nameList = [NSMutableArray array];

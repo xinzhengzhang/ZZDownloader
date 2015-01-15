@@ -17,9 +17,8 @@
 @implementation ViewController
 
 - (void)viewDidLoad {
-    [super viewDidLoad];
     NSString *path = [[NSBundle mainBundle] pathForResource:@"cid2" ofType:@"txt"];
-    
+
     // start font task
     NSString* fileContents = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:nil];
     NSArray* allLinedStrings = [fileContents componentsSeparatedByCharactersInSet:
@@ -45,7 +44,7 @@
 {
 
     // start bg task
-    [[ZZDownloadTaskManagerV2 shared] checkSelfUnSecheduledWork:nil];
+    [[ZZDownloadTaskManagerV2 shared] checkSelfUnSecheduledWorkKey:nil block:nil];
 }
 
 - (void)didReceiveMemoryWarning {
