@@ -1,6 +1,6 @@
 //
 //  ZZDownloadTaskCFNetworkOperation.m
-//  Pods
+//  ZZDownloader
 //
 //  Created by zhangxinzheng on 12/12/14.
 //
@@ -14,19 +14,13 @@
 #import <sys/time.h>
 #import "ZZDownloadBackgroundSessionManager.h"
 
-//#define ZZDownloadTaskManagerTaskDir @".Downloads/zzdownloadtaskmanagertask"
-//#define ZZDownloadTaskManagerTaskFileDir @".Downloads/zzdownloadtaskmanagertaskfile"
-//#define ZZDownloadTaskManagerTaskFileDirTmp @".Downloads/zzdownloadtaskmanagertaskfiletmp"
-
-
-
 
 @interface ZZDownloadTaskCFNetworkOperation () {
     struct timeval container;
 }
 @property (nonatomic) NSFileManager *fileManager;
 @property (nonatomic) ZZDownloadTask *downloadTask;
-@property (nonatomic) ZZTaskOperationState state;
+@property (nonatomic, readwrite) ZZTaskOperationState state;
 @property (nonatomic) NSRecursiveLock *lock;
 @property (nonatomic) uint64_t clock;
 @property (nonatomic) int32_t continuousFailCount;
@@ -104,7 +98,6 @@
     if (self.downloadTask.command == ZZDownloadAssignedCommandStart) {
         self.downloadTask.command = ZZDownloadAssignedCommandNone;
     }
-    
     if (self.isCancelled) {
         [self finish];
     } else if (self.isReady && [self hasFreeSpaceForDownloading:0]) {
@@ -112,6 +105,7 @@
         [self parse];
     } else {
         self.state = ZZTaskOperationStateExecuting;
+        sleep(1);
         [self finish];
     }
     
@@ -171,6 +165,7 @@
             }
             self.downloadTask.argv = [MTLJSONAdapter JSONDictionaryFromModel:entity];
         }];
+        [self.delegate notifyUpdate:entity.entityKey];
         [entity downloadDanmakuWithDownloadStartBlock:^{
             self.downloadTask.state = ZZDownloadStateDownloadingDanmaku;
         }];
@@ -200,9 +195,6 @@
                 BOOL success = NO;
                 NSString *tempBgCache = [self bgCachedPath:i typeTag:entity.uniqueKey];
                 if (tempBgCache) {
-#if BILITEST==1
-                    [self.downloadTask writeLog:[NSString stringWithFormat:@"task:%@ bgCache path=%@",self.downloadTask.key, tempBgCache]];
-#endif
                     success = [self transferSection:i tempPath:tempBgCache];
                 }
                 if (!success) {
@@ -242,8 +234,13 @@
             }
         }
     } else {
-        self.downloadTask.state = ts;
-        self.downloadTask.lastestError = [NSError errorWithDomain:ZZDownloadTaskErrorDomain code:ZZDownloadTaskErrorTypeInterruptError userInfo:@{NSLocalizedDescriptionKey:@"解析错误"}];
+        if (self.state != ZZTaskOperationStateFinish) {
+            self.downloadTask.state = ts;
+            self.downloadTask.lastestError = [NSError errorWithDomain:ZZDownloadTaskErrorDomain code:ZZDownloadTaskErrorTypeInterruptError userInfo:@{NSLocalizedDescriptionKey:@"解析错误"}];
+        } else {
+            NSLog(@"blocking state and canceled");
+        }
+        
     }
     
     [self finish];
@@ -316,8 +313,7 @@
     if (!jsonError) {
         argv = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
     }
-    NSString *headerStr = @"";
-    NSDictionary *header = [NSJSONSerialization JSONObjectWithData:[headerStr dataUsingEncoding:NSUTF8StringEncoding] options:NSJSONReadingMutableContainers error:nil];
+    NSDictionary *header = @{};
     NSMutableDictionary *defaultHeader = [NSMutableDictionary dictionaryWithObjects:@[@"charset=utf-8", @"Mozilla/5.0 (Linux; Android 4.1.1; Nexus 7 Build/JRO03D) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.166 Safari/535.19", @"*/*", @"identity;q=1, *;q=0", @"en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4", @"keep-alive"] forKeys:@[@"Content-Type", @"User-Agent", @"Accept", @"Accept-Encoding", @"Accept-Language", @"Connection"]];
     if ([header isKindOfClass:[NSDictionary class]]) {
         [header enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSString *value, BOOL *stop) {
@@ -328,7 +324,13 @@
     [defaultHeader enumerateKeysAndObjectsUsingBlock:^(NSString *key, NSString *value, BOOL *stop) {
         CFHTTPMessageSetHeaderFieldValue(messageRef, (__bridge CFStringRef)key, (__bridge CFStringRef)value);
     }];
-
+    //    CFHTTPMessageSetHeaderFieldValue(messageRef, CFSTR("Content-Type"), CFSTR("charset=utf-8"));
+    //    CFHTTPMessageSetHeaderFieldValue(messageRef, CFSTR("User-Agent"), CFSTR("Mozilla/5.0 (Linux; Android 4.1.1; Nexus 7 Build/JRO03D) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.166 Safari/535.19"));
+    ////    CFHTTPMessageSetHeaderFieldValue(messageRef, CFSTR("User-Agent"), CFSTR(LIBAVFORMAT_IDENT));
+    //    CFHTTPMessageSetHeaderFieldValue(messageRef, CFSTR("Accept"), CFSTR("*/*"));
+    //    CFHTTPMessageSetHeaderFieldValue(messageRef, CFSTR("Accept-Encoding"), CFSTR("identity;q=1, *;q=0"));
+    //    CFHTTPMessageSetHeaderFieldValue(messageRef, CFSTR("Accept-Language"), CFSTR("en-US,en;q=0.8,zh-CN;q=0.6,zh;q=0.4"));
+    //    CFHTTPMessageSetHeaderFieldValue(messageRef, CFSTR("Connection"), CFSTR("keep-alive"));
     CFHTTPMessageSetHeaderFieldValue(messageRef, CFSTR("HOST"), (__bridge CFStringRef)[urlx host]);
     
     
@@ -366,20 +368,11 @@
             CFIndex errorCode = CFHTTPMessageGetResponseStatusCode(myResponse);
             
             CFDictionaryRef allHeader = CFHTTPMessageCopyAllHeaderFields(myResponse);
-#if BILITEST==1
-            [self.downloadTask writeLog:[NSString stringWithFormat:@"task:%@ response header=%@",self.downloadTask.key, allHeader]];
-#endif
             if (bytesRead < 0 || errorCode >= 400) {
-#if BILITEST==1
-                [self.downloadTask writeLog:[NSString stringWithFormat:@"task:%@ http error 4xx=%lu",self.downloadTask.key, errorCode]];
-#endif
                 self.redirectCount = 0;
                 self.downloadTask.lastestError = [NSError errorWithDomain:ZZDownloadTaskErrorDomain code:ZZDownloadTaskErrorTypeIOError userInfo:@{NSLocalizedDescriptionKey:[NSString stringWithFormat:@"http errcode=%ld",errorCode]
                                                                                                                                                    }];
             } else if (errorCode >= 300 && errorCode < 400) {
-#if BILITEST==1
-                [self.downloadTask writeLog:[NSString stringWithFormat:@"task:%@ http error 3xx=%lu",self.downloadTask.key, errorCode]];
-#endif
                 NSString *redirectUrl = CFDictionaryGetValue(allHeader, @"Location");
                 if (redirectUrl) {
                     self.redirectCount += 1;
@@ -390,9 +383,6 @@
                     }
                 }
             } else if (errorCode >= 200 && errorCode < 300){
-#if BILITEST==1
-                [self.downloadTask writeLog:[NSString stringWithFormat:@"task:%@ http error 2xx=%lu",self.downloadTask.key, errorCode]];
-#endif
                 self.redirectCount = 0;
                 long long totalContentLength = 0;
                 long long totalDownloaded = 0;
@@ -553,7 +543,7 @@
         return YES;
     }
     self.downloadTask.state = ZZDownloadStateFail;
-    self.downloadTask.lastestError = [NSError errorWithDomain:ZZDownloadTaskErrorDomain code:ZZDownloadTaskErrorTypeIOError userInfo:@{NSLocalizedDescriptionKey: @"磁盘已满"}];
+    self.downloadTask.lastestError = [NSError errorWithDomain:ZZDownloadTaskErrorDomain code:ZZDownloadTaskErrorTypeIOFullError userInfo:@{NSLocalizedDescriptionKey: @"磁盘已满"}];
     return NO;
 }
 
@@ -568,6 +558,9 @@
         self.downloadTask.lastestError = [NSError errorWithDomain:ZZDownloadTaskErrorDomain code:ZZDownloadTaskErrorTypeIOError userInfo:@{NSLocalizedDescriptionKey:@"文件缓存移动错误"}];
         return NO;
     } else {
+        NSDictionary *dict = [[NSFileManager defaultManager] attributesOfItemAtPath:destinationPath error:nil];
+        long long x = [dict[NSFileSize] longLongValue];
+        self.downloadTask.sectionsLengthList[index] = [NSNumber numberWithUnsignedInteger:x];
         return YES;
     }
 }
@@ -601,14 +594,8 @@
     NSDictionary *dict = [[NSFileManager defaultManager] attributesOfItemAtPath:filePath error:nil];
     long long x = [dict[NSFileSize] longLongValue];
     if (x == exceptLength) {
-#if BILITEST==1
-        [self.downloadTask writeLog:[NSString stringWithFormat:@"task:%@ file check valid success downloaded = %lld excepted=%lld",self.downloadTask.key, x, exceptLength]];
-#endif
         return YES;
     }
-#if BILITEST==1
-    [self.downloadTask writeLog:[NSString stringWithFormat:@"task:%@ file check valid fail downloaded = %lld excepted=%lld",self.downloadTask.key, x, exceptLength]];
-#endif
     return NO;
 }
 
@@ -619,9 +606,6 @@
     if (x > kb * 1024) {
         return YES;
     }
-#if BILITEST==1
-    [self.downloadTask writeLog:[NSString stringWithFormat:@"task:%@ file size valid fail",self.downloadTask.key]];
-#endif
     return NO;
 }
 

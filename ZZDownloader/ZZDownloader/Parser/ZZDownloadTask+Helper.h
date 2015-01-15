@@ -1,6 +1,6 @@
 //
 //  ZZDownloadTaskHelper.h
-//  Pods
+//  ZZDownloader
 //
 //  Created by zhangxinzheng on 11/17/14.
 //
@@ -10,10 +10,7 @@
 #import "ZZDownloadTask.h"
 #import "ZZDownloadBaseEntity.h"
 
-//#define ZZDownloadValidEntity @[@"BiliDownloadAVEntity", @"BiliDownloadEpEntity"]
-
 @interface ZZDownloadTask (Helper)
 
-//- (ZZDownloadBaseEntity *)recoverEntity;
 
 @end

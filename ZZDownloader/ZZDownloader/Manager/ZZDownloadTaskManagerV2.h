@@ -1,6 +1,6 @@
 //
 //  ZZDownloadTaskManagerV2.h
-//  ibiliplayer
+//  ZZDownloader
 //
 //  Created by zhangxinzheng on 12/15/14.
 //  Copyright (c) 2014 zhangxinzheng. All rights reserved.
@@ -22,5 +22,5 @@
 
 - (void)addOp:(ZZDownloadOperation *)operation withEntity:(ZZDownloadBaseEntity *)entity block:(void (^)(id))block;
 - (BOOL)isDownloading;
-- (void)checkSelfUnSecheduledWork:(void(^)(id))block;
+- (void)checkSelfUnSecheduledWorkKey:(NSString *)key block:(void(^)(id))block;
 @end

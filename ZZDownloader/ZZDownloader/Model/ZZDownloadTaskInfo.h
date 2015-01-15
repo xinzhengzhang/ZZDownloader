@@ -1,6 +1,6 @@
 //
 //  ZZDownloadTaskInfo.h
-//  Pods
+//  ZZDownloader
 //
 //  Created by zhangxinzheng on 11/20/14.
 //

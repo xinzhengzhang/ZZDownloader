@@ -1,6 +1,6 @@
 //
-//  BiliDownloadTaskGroupManager.m
-//  ibiliplayer
+//  ZZDownloadTaskGroupManager.m
+//  ZZDownloader
 //
 //  Created by zhangxinzheng on 11/26/14.
 //  Copyright (c) 2014 zhangxinzheng. All rights reserved.
@@ -21,7 +21,6 @@ NSString * const ZZDownloadTaskGroupNotifyUiNotification = @"ZZDownloadTaskGroup
 
 @property (nonatomic) NSMutableDictionary *allTaskGroupInfo;
 @property (nonatomic, strong) NSMutableDictionary *allTaskNotificationTimeDict;
-//@property (nonatomic) dispatch_queue_t managerQueue;
 
 @end
 
@@ -34,7 +33,6 @@ NSString * const ZZDownloadTaskGroupNotifyUiNotification = @"ZZDownloadTaskGroup
     dispatch_once(&onceToken, ^{
         share = [[ZZDownloadTaskGroupManager alloc] init];
         share.allTaskGroupInfo = [NSMutableDictionary dictionary];
-        //        share.managerQueue = dispatch_queue_create("com.zzdownloader.bilitaskgroupmanager.groupmanager.queue", DISPATCH_QUEUE_SERIAL);
         [[NSNotificationCenter defaultCenter] addObserver:share selector:@selector(notifyReceived:) name:ZZDownloadTaskNotifyUiNotification object:nil];
     });
     return share;
@@ -63,9 +61,7 @@ NSString * const ZZDownloadTaskGroupNotifyUiNotification = @"ZZDownloadTaskGroup
     if (!taskInfo) {
         return;
     }
-    //    dispatch_async(dispatch_get_main_queue(), ^{
     [self dealTaskInfo:taskInfo];
-    //    });
 }
 
 - (void)dealTaskInfo:(ZZDownloadTaskInfo *)taskInfo
@@ -87,7 +83,6 @@ NSString * const ZZDownloadTaskGroupNotifyUiNotification = @"ZZDownloadTaskGroup
         }
     }
     ZZDownloadTaskGroupState originstate = group.state;
-    //    ZZDownloadTaskInfo *oldtaskInfo = group.taskInfoDict[entity.entityKey];
     group.taskInfoDict[entity.entityKey] = taskInfo;
     
     if (taskInfo.state == ZZDownloadStateRemoved) {

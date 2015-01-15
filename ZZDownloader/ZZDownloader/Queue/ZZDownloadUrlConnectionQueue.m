@@ -1,6 +1,6 @@
 //
 //  ZZDownloadUrlConnectionQueue.m
-//  Pods
+//  ZZDownloader
 //
 //  Created by zhangxinzheng on 11/13/14.
 //
@@ -18,7 +18,6 @@
         queue = [[ZZDownloadUrlConnectionQueue alloc] init];
         queue.name = ZZDownloadUrlConnectionQueueName;
         queue.maxConcurrentOperationCount = 4;
-//        queue.maxConcurrentOperationCount = 4;
     });
     return queue;
 }

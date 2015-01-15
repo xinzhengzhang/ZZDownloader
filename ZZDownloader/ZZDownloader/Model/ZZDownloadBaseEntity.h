@@ -1,6 +1,6 @@
 //
 //  ZZDownloadBaseEntity.h
-//  Pods
+//  ZZDownloader
 //
 //  Created by zhangxinzheng on 11/14/14.
 //
@@ -12,6 +12,7 @@
 
 @interface ZZDownloadBaseEntity : MTLModel <MTLJSONSerializing, ZZDownloadParserProtocol>
 
+@property (nonatomic) int32_t sections;
 + (NSArray *)argvKeys;
 + (const void  **)argvKeysFlags;
 

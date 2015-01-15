@@ -1,6 +1,6 @@
 //
 //  ZZDownloadNotifyManager.m
-//  Pods
+//  ZZDownloader
 //
 //  Created by zhangxinzheng on 11/13/14.
 //
@@ -22,6 +22,8 @@ NSString * const ZZDownloadTaskDiskSpaceWarningNotification = @"ZZDownloadTaskDi
 NSString * const ZZDownloadTaskDiskSpaceErrorNotification = @"ZZDownloadTaskDiskSpaceErrorNotification";
 NSString * const ZZDownloadTaskNetWorkChangedInterruptNotification = @"ZZDownloadTaskNetWorkChangedInterruptNotification";
 NSString * const ZZDownloadTaskNetWorkChangedResumeNotification = @"ZZDownloadTaskNetWorkChangedResumeNotification";
+NSString * const ZZDownloadTaskStartTaskUnderCelluar = @"ZZDownloadTaskStartTaskUnderCelluar";
+
 
 @interface ZZDownloadNotifyManager () {
     struct timeval container;
@@ -67,10 +69,6 @@ NSString * const ZZDownloadTaskNetWorkChangedResumeNotification = @"ZZDownloadTa
 - (void)addOp:(ZZDownloadMessage *)message
 {
     [self performSelector:@selector(doOp:) onThread:self.notifyThread withObject:message waitUntilDone:NO modes:[self.runLoopModes allObjects]];
-    //    __block ZZDownloadMessage *x = message;
-    //        [[ZZDownloadNotifyQueue shared] addOperationWithBlock:^{
-    //            [self doOp:x];
-    //        }];
 }
 
 - (void)doOp:(ZZDownloadMessage *)message
@@ -96,6 +94,8 @@ NSString * const ZZDownloadTaskNetWorkChangedResumeNotification = @"ZZDownloadTa
         [self notifyWithNotification:ZZDownloadTaskNetWorkChangedInterruptNotification title:@"穿越注意穿越注意(-｡-;)" message:@"网络环境变化、自动防御开启、下载停止ˊ_>ˋ"];
     } else if (message.command == ZZDownloadMessageCommandNotifyNetworkChangedResume) {
         [self notifyWithNotification:ZZDownloadTaskNetWorkChangedResumeNotification title:@"穿越注意穿越注意(-｡-;)" message:@"恢复下载、恢复下载ˊ_>ˋ"];
+    } else if (message.command == ZZDownloadMessageCommandNotifyStartTaskUnderCelluar) {
+        [self notifyWithNotification:ZZDownloadTaskStartTaskUnderCelluar title:@"网络设置异常" message:@"如需在2G/3G环境下下载\n请在设置中勾选> <"];
     }
 }
 
@@ -155,7 +155,6 @@ NSString * const ZZDownloadTaskNetWorkChangedResumeNotification = @"ZZDownloadTa
         if (now - old > 1000 || focusUpdate) {
             self.allTaskNotificationTimeDict[key] = [NSNumber numberWithLong:now];
             
-            //            __block ZZDownloadTaskInfo *taskInfoCopy = [task deepCopy];
             __block ZZDownloadTaskInfo *taskInfoblock = task;
             dispatch_async(dispatch_get_main_queue(), ^{
                 [[NSNotificationCenter defaultCenter] postNotificationName:ZZDownloadTaskNotifyUiNotification object:taskInfoblock];
@@ -201,7 +200,6 @@ NSString * const ZZDownloadTaskNetWorkChangedResumeNotification = @"ZZDownloadTa
 {
     if (context == ZZDownloadStateChangedContext) {
         if ([change[NSKeyValueChangeNewKey] unsignedIntegerValue] != [change[NSKeyValueChangeOldKey] unsignedIntegerValue]) {
-            //            NSLog(@"key=%@ old = %@ new = %@", [object key], change[@"old"], change[@"new"]);
             ZZDownloadMessage *message = [[ZZDownloadMessage alloc] init];
             ZZDownloadTask *task = [object deepCopy];
             message.command = ZZDownloadMessageCommandNeedUpdateInfo;

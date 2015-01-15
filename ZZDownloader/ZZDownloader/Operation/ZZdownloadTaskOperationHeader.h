@@ -1,9 +1,9 @@
 //
 //  ZZdownloadTaskOperationHeader.h
-//  ibiliplayer
+//  ZZDownloader
 //
 //  Created by zhangxinzheng on 12/19/14.
-//  Copyright (c) 2014 Zhang Rui. All rights reserved.
+//  Copyright (c) 2014 zhangxinzheng. All rights reserved.
 //
 
 #ifndef ibiliplayer_ZZdownloadTaskOperationHeader_h
@@ -12,6 +12,7 @@
 @protocol ZZDownloadTaskOperationDelegate <NSObject>
 
 - (void)updateTaskWithBlock:(void (^)())block;
+
 - (void)notifyUpdate:(NSString *)key;
 
 @end

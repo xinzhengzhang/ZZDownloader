@@ -1,6 +1,6 @@
 //
 //  ZZDownloadBackgroundSessionManager.h
-//  ibiliplayer
+//  ZZDownloder
 //
 //  Created by zhangxinzheng on 12/18/14.
 //  Copyright (c) 2014 zhangxinzheng. All rights reserved.
@@ -12,9 +12,8 @@
 @interface ZZDownloadBackgroundSessionManager : AFURLSessionManager
 
 + (id)shared;
-- (NSInteger)bgCachedCount;
-- (int32_t)addCacheTaskByTask:(ZZDownloadTask *)task;
+- (void)addCacheTaskByTasks:(NSArray *)tasks completionBlock:(void (^)(NSNumber *))block;
 - (void)removeCacheTaskByTask:(ZZDownloadTask *)task section:(int32_t)section typeTag:(NSString *)typeTag;
-
+- (void)checkSelf;
 
 @end

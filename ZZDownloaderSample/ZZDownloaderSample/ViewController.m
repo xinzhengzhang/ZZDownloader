@@ -10,8 +10,8 @@
 #import "ZZDownloader.h"
 #import "ZZDownloadTaskManagerV2.h"
 #import "SampleEntity.h"
-@interface ViewController ()
 
+@interface ViewController ()
 @end
 
 @implementation ViewController

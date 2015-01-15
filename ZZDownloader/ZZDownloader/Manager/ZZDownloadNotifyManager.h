@@ -1,6 +1,6 @@
 //
 //  ZZDownloadNotifyManager.h
-//  Pods
+//  ZZDownloader
 //
 //  Created by zhangxinzheng on 11/13/14.
 //
@@ -15,6 +15,7 @@ extern NSString * const ZZDownloadTaskDiskSpaceWarningNotification;
 extern NSString * const ZZDownloadTaskDiskSpaceErrorNotification;
 extern NSString * const ZZDownloadTaskNetWorkChangedInterruptNotification;
 extern NSString * const ZZDownloadTaskNetWorkChangedResumeNotification;
+extern NSString * const ZZDownloadTaskStartTaskUnderCelluar;
 
 @interface ZZDownloadNotifyManager : NSObject
 

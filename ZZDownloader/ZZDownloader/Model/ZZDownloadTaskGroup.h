@@ -1,6 +1,6 @@
 //
 //  ZZDownloadTaskGroup.h
-//  ibiliplayer
+//  ZZDownloader
 //
 //  Created by zhangxinzheng on 11/25/14.
 //  Copyright (c) 2014 zhangxinzheng. All rights reserved.

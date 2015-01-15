@@ -1,6 +1,6 @@
 //
 //  ZZDownloadMessage.h
-//  Pods
+//  ZZDownloader
 //
 //  Created by zhangxinzheng on 11/13/14.
 //
@@ -19,6 +19,7 @@ typedef NS_ENUM(NSUInteger, ZZDownloadMessageCommand) {
     ZZDownloadMessageCommandNotifyDiskWarning,
     ZZDownloadMessageCommandNotifyNetWorkChangedInterrupt,
     ZZDownloadMessageCommandNotifyNetworkChangedResume,
+    ZZDownloadMessageCommandNotifyStartTaskUnderCelluar,
     ZZDownloadMessageCommandNeedBuild
 };
 

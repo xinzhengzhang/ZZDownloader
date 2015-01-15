@@ -1,6 +1,6 @@
 //
 //  ZZDownloadTaskManagerV2.m
-//  ibiliplayer
+//  ZZDownloader
 //
 //  Created by zhangxinzheng on 12/15/14.
 //  Copyright (c) 2014 zhangxinzheng. All rights reserved.
@@ -12,7 +12,6 @@
 #import "ZZDownloadTaskGroupManager.h"
 #import "Reachability.h"
 #import "ZZDownloadUrlConnectionQueue.h"
-//#import "ZZdownloadTaskBackgroundOperation.h"
 #import "ZZDownloadTaskCFNetworkOperation.h"
 #import "ZZDownloadTask+Helper.h"
 #import "ZZDownloader.h"
@@ -126,10 +125,12 @@
     return downloadFolder;
 }
 
-- (void)checkSelfUnSecheduledWork:(void (^)(id))block
+- (void)checkSelfUnSecheduledWorkKey:(NSString *)key block:(void(^)(id))block
+
 {
     ZZDownloadOperation *operation = [[ZZDownloadOperation alloc] init];
     operation.command  = ZZDownloadCommandCheckSelfUnSecheduledTask;
+    operation.key = key;
     
     [self addOp:operation withEntity:nil block:block];
 }
@@ -182,10 +183,10 @@
         return;
     }
     if (operation.command == ZZDownloadCommandCheckSelfUnSecheduledTask) {
-        [self executeBackgroundTaskByWeight:^{
+        [self executeBackgroundTaskByWeightDefaultKey:operation.key block:^(NSNumber *number){
             if (block) {
                 dispatch_async(dispatch_get_main_queue(), ^{
-                    block(nil);
+                    block(number);
                 });
             }
         }];
@@ -196,9 +197,9 @@
         if ([self settingCouldDownload]) {
             [self startDownloadTask:operation.key];
         } else {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [[[UIAlertView alloc] initWithTitle:@"网络设置异常" message:@"如需在2G/3G环境下下载\n请在设置中勾选> <" delegate:nil cancelButtonTitle:@"知道啦" otherButtonTitles:nil] show];
-            });
+            ZZDownloadMessage *message = [ZZDownloadMessage new];
+            message.command = ZZDownloadMessageCommandNotifyStartTaskUnderCelluar;
+            [[ZZDownloadNotifyManager shared] addOp:message];
         }
         return;
     }
@@ -225,7 +226,7 @@
     NSError *error;
     for (NSString *filePath in filePathList) {
         NSData *data = [NSData dataWithContentsOfFile:filePath options:NSDataReadingMappedIfSafe error:&error];
-        if (error) {
+        if (error || !data) {
             NSLog(@"%@", error);
             continue;
         }
@@ -239,25 +240,73 @@
             NSLog(@"%@", error);
             continue;
         }
+        
         [rtask addObserver:[ZZDownloadNotifyManager shared] forKeyPath:@"state" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:ZZDownloadStateChangedContext];
         rtask.taskArrangeType = ZZDownloadTaskArrangeTypeUnArranged;
-        //        rtask.command = ZZDownloadAssignedCommandNone;
         
         if (rtask.key) {
             self.allTaskDict[rtask.key] = rtask;
+            [self dealBgCache:rtask];
+            if (rtask.state == ZZDownloadStateDownloading || rtask.state == ZZDownloadStateParsing || rtask.state == ZZDownloadStateDownloadingCover || rtask.state == ZZDownloadStateDownloadingDanmaku || rtask.state == ZZDownloadStateWaiting) {
+                rtask.state = ZZDownloadStateNothing;
+                rtask.command = ZZDownloadAssignedCommandStart;
+            }
+            [self notifyQueueUpdateMessage:rtask];
         }
-        if (rtask.state == ZZDownloadStateDownloading || rtask.state == ZZDownloadStateParsing || rtask.state == ZZDownloadStateDownloadingCover || rtask.state == ZZDownloadStateDownloadingDanmaku || rtask.state == ZZDownloadStateWaiting) {
-            rtask.state = ZZDownloadStateNothing;
-            rtask.command = ZZDownloadAssignedCommandStart;
-            NSArray *keys = [self.allTaskDict keysSortedByValueUsingComparator:^(ZZDownloadTask *task1, ZZDownloadTask *task2) {
-                return (NSComparisonResult)(task1.weight > task2.weight);
-            }];
-            if (keys.count) {
-                rtask.weight = [self.allTaskDict[keys.firstObject] weight] -1;
+    }
+}
+
+- (void)dealBgCache:(ZZDownloadTask *)task
+{
+    ZZDownloadQueueAssert(ZZDownloadOpQueueName);
+    
+    ZZDownloadBaseEntity *entity = [task recoverEntity];
+    if (entity.uniqueKey && entity.sections) {
+        int sections = entity.sections;
+        for (int i = 0; i < sections; i++) {
+            NSString *tempBgCache = [self bgCachedPathKey:task.key index:i uniqueKey:entity.uniqueKey isLast:i == sections];
+            if (!tempBgCache) {
+                return;
+            }
+            NSString *destinationPath = [[self.class downloadFolder] stringByAppendingPathComponent:[entity destinationDirPath]];
+            if(![[NSFileManager defaultManager] createDirectoryAtPath:destinationPath withIntermediateDirectories:YES attributes:nil error:nil]) {
+                NSLog(@"Failed to create section directory at %@", destinationPath);
+            }
+            destinationPath = [destinationPath stringByAppendingPathComponent:[NSString stringWithFormat:@"%d.section", i]];
+            NSError *fileE;
+            [[NSFileManager defaultManager] removeItemAtPath:destinationPath error:nil];
+            [[NSFileManager defaultManager] moveItemAtPath:tempBgCache toPath:destinationPath error:&fileE];
+            if (fileE) {
+                task.lastestError = [NSError errorWithDomain:ZZDownloadTaskErrorDomain code:ZZDownloadTaskErrorTypeIOError userInfo:@{NSLocalizedDescriptionKey:@"文件缓存移动错误"}];
+                return;
+            } else {
+                if (task.sectionsLengthList.count > i) {
+                    NSDictionary *dict = [[NSFileManager defaultManager] attributesOfItemAtPath:destinationPath error:nil];
+                    long long x = [dict[NSFileSize] longLongValue];
+                    task.sectionsLengthList[i] = [NSNumber numberWithUnsignedInteger:x];
+                }
             }
         }
-        [self notifyQueueUpdateMessage:rtask];
+    } else {
+        return;
     }
+    task.state = ZZDownloadStateDownloaded;
+    task.lastestError = nil;
+    task.command = ZZDownloadAssignedCommandNone;
+    [self writeTaskToDisk:task];
+    [self notifyQueueUpdateMessage:task];
+}
+
+- (NSString *)bgCachedPathKey:(NSString *)key index:(int32_t)index uniqueKey:(NSString *)uniquekey isLast:(BOOL)isLast
+{
+    NSString *targetPath = [ZZDownloadTaskCFNetworkOperation getBackgroundDownloadTempPath:key section:index typetag:uniquekey];
+    NSDictionary *dict = [[NSFileManager defaultManager] attributesOfItemAtPath:targetPath error:nil];
+    long long x = [dict[NSFileSize] longLongValue];
+    NSInteger kb = isLast ? 10 : 100;
+    if (x > kb * 1024) {
+        return targetPath;
+    }
+    return nil;
 }
 
 - (void)updateTaskByEntity:(ZZDownloadBaseEntity *)entity
@@ -268,19 +317,25 @@
     if (!key) {
         return;
     }
+    NSArray *keys = [self.allTaskDict keysSortedByValueUsingComparator:^(ZZDownloadTask *task1, ZZDownloadTask *task2) {
+        return (NSComparisonResult)(task1.weight > task2.weight);
+    }];
     if (!self.allTaskDict[key]) {
         ZZDownloadTask *task = [ZZDownloadTask buildTaskFromDisk:[MTLJSONAdapter JSONDictionaryFromModel:entity]];
         task.key = key;
         task.entityType = NSStringFromClass([entity class]);
-        NSArray *keys = [self.allTaskDict keysSortedByValueUsingComparator:^(ZZDownloadTask *task1, ZZDownloadTask *task2) {
-            return (NSComparisonResult)(task1.weight > task2.weight);
-        }];
+        
         if (keys.count) {
-            task.weight = [self.allTaskDict[keys.firstObject] weight] - 1;
+            task.weight = [self.allTaskDict[keys.lastObject] weight] + 1;
         }
         [task addObserver:[ZZDownloadNotifyManager shared] forKeyPath:@"state" options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:ZZDownloadStateChangedContext];
         [self notifyQueueUpdateMessage:task];
         self.allTaskDict[key] = task;
+    } else {
+        if (keys.count) {
+            ZZDownloadTask *task = self.allTaskDict[key];
+            task.weight = [self.allTaskDict[keys.firstObject] weight] - 1;
+        }
     }
 }
 
@@ -312,7 +367,6 @@
             NSArray *tmpOp = [[ZZDownloadUrlConnectionQueue shared] operations];
             for (ZZDownloadTaskCFNetworkOperation *op in tmpOp) {
                 if ([op.key isEqualToString:key]) {
-                    //                    [op cancel];
                     [op pause];
                 }
             }
@@ -357,7 +411,6 @@
         for (ZZDownloadTaskCFNetworkOperation *op in ops) {
             if ([op.key isEqualToString:key]) {
                 inQueue = YES;
-                //                [op cancel];
                 [op remove];
                 break;
             }
@@ -437,29 +490,41 @@
     }];
 }
 
--(void)executeBackgroundTaskByWeight:(void (^)(void))block
+-(void)executeBackgroundTaskByWeightDefaultKey:(NSString *)taskKey block:(void (^)(NSNumber *))block
 {
     ZZDownloadQueueAssert(ZZDownloadOpQueueName);
-    //    __block int32_t addCount = [[ZZDownloadBackgroundSessionManager shared] bgCachedCount];
     //    if (addCount <= 2) {
-    __block int32_t addCount = 0;
-    NSArray *keys = [self.allTaskDict keysSortedByValueUsingComparator:^(ZZDownloadTask *task1, ZZDownloadTask *task2) {
-        return (NSComparisonResult)(task1.weight > task2.weight);
-    }];
-    [keys enumerateObjectsUsingBlock:^(NSString *key, NSUInteger index, BOOL *stop) {
-        ZZDownloadTask *task = self.allTaskDict[key];
-        if (task && [self taskCanStartDownload:task]) {
-            int32_t added = [[ZZDownloadBackgroundSessionManager shared] addCacheTaskByTask:task];
-            [self writeTaskToDisk:task];
-            addCount += added;
-            if (addCount > 2) {
-                *stop = YES;
+    if (taskKey && self.allTaskDict[taskKey]) {
+        [self dealBgCache:self.allTaskDict[taskKey]];
+    } else {
+        [self.allTaskDict enumerateKeysAndObjectsUsingBlock:^(NSString *key, ZZDownloadTask *task, BOOL *stop) {
+            if (task.state == ZZDownloadStateDownloaded || task.taskArrangeType != ZZDownloadTaskArrangeTypeUnArranged) {
+                return;
             }
-        }
-    }];
-    //    }
-    if (block) {
-        block();
+            [self dealBgCache:task];
+        }];
+    }
+    
+    if ([[UIApplication sharedApplication] applicationState] == UIApplicationStateBackground) {
+        NSArray *keys = [self.allTaskDict keysSortedByValueUsingComparator:^(ZZDownloadTask *task1, ZZDownloadTask *task2) {
+            return (NSComparisonResult)(task1.weight < task2.weight);
+        }];
+        NSMutableArray *tempArray = [NSMutableArray array];
+        
+        [keys enumerateObjectsUsingBlock:^(NSString *key, NSUInteger index, BOOL *stop) {
+            ZZDownloadTask *task = self.allTaskDict[key];
+            if (task && [self taskCanStartDownload:task]) {
+                [self dealBgCache:task];
+                if (task.state == ZZDownloadStateDownloaded) {
+                    return;
+                }
+                [tempArray addObject:task];
+                if (tempArray.count > 10) {
+                    *stop = YES;
+                }
+            }
+        }];
+        [[ZZDownloadBackgroundSessionManager shared] addCacheTaskByTasks:tempArray completionBlock:block];
     }
 }
 
@@ -467,25 +532,31 @@
 {
     ZZDownloadQueueAssert(ZZDownloadOpQueueName);
     
-    if ([[ZZDownloadUrlConnectionQueue shared] operationCount] < [[ZZDownloadUrlConnectionQueue shared] maxConcurrentOperationCount]) {
+    NSArray *opQ = [[ZZDownloadUrlConnectionQueue shared] operations];
+    NSInteger runningCount = opQ.count;
+    for (ZZDownloadTaskCFNetworkOperation *op in opQ) {
+        if (op.state == ZZTaskOperationStateFinish) {
+            runningCount -= 1;
+        }
+    }
+    if (runningCount < [[ZZDownloadUrlConnectionQueue shared] maxConcurrentOperationCount]) {
         NSArray *keys = [self.allTaskDict keysSortedByValueUsingComparator:^(ZZDownloadTask *task1, ZZDownloadTask *task2) {
             return (NSComparisonResult)(task1.weight > task2.weight);
         }];
-        [keys enumerateObjectsWithOptions:NSEnumerationReverse usingBlock:^(NSString *key, NSUInteger index, BOOL *stop){
+        [keys enumerateObjectsUsingBlock:^(NSString *key, NSUInteger index, BOOL *stop){
             __block ZZDownloadTask *task = self.allTaskDict[key];
             if (task && [self taskCanStartDownload:task]) {
                 if (![self settingCouldDownload]) {
-                    //                    task.lastestError = [NSError errorWithDomain:ZZDownloadTaskErrorDomain code:ZZDownloadTaskErrorTypeInterruptError userInfo:@{NSLocalizedDescriptionKey: @"network not in wifi"}];
                     *stop = YES;
                     return;
                 }
                 task.taskArrangeType = ZZDownloadTaskArrangeTypeCFSync;
+                NSLog(@"start task=%@",task.key);
                 ZZDownloadTaskCFNetworkOperation *op = [[ZZDownloadTaskCFNetworkOperation alloc] initWithTask:task];
                 op.delegate = self;
                 op.completionBlock = ^{
                     self.CFCompleteBlock(task.key);
                 };
-                //                [[ZZDownloadUrlConnectionQueue shared] addOperation:op];
                 [[ZZDownloadUrlConnectionQueue shared] addOperations:@[op] waitUntilFinished:NO];
                 if ([[ZZDownloadUrlConnectionQueue shared] operationCount] >= [[ZZDownloadUrlConnectionQueue shared] maxConcurrentOperationCount]) {
                     *stop = YES;
@@ -528,8 +599,8 @@
     task.triedCount += 1;
     task.command = ZZDownloadAssignedCommandStart;
     task.state = ZZDownloadStateFail;
-    
-    if (task.triedCount > 10) {
+    NSLog(@"task=%@ failcount=%d",key, task.triedCount);
+    if (task.triedCount > 10 || (task.lastestError && task.lastestError.code == ZZDownloadTaskErrorTypeIOFullError)) {
         task.state = ZZDownloadStateInvalid;
         task.command = ZZDownloadAssignedCommandNone;
         [self executeOperationByWeight];
@@ -537,7 +608,10 @@
     }
     
     if (task.triedCount % 2 == 0) {
-        task.weight = 1;
+        NSArray *keys = [self.allTaskDict keysSortedByValueUsingComparator:^(ZZDownloadTask *task1, ZZDownloadTask *task2) {
+            return (NSComparisonResult)(task1.weight > task2.weight);
+        }];
+        task.weight = [self.allTaskDict[keys.lastObject] weight] + 1;
         [self executeOperationByWeight];
     } else {
         [self executeOperationByKey:task.key];
@@ -548,11 +622,17 @@
 {
     ZZDownloadQueueAssert(ZZDownloadOpQueueName);
     
-    if ([[ZZDownloadUrlConnectionQueue shared] operationCount] < [[ZZDownloadUrlConnectionQueue shared] maxConcurrentOperationCount]) {
+    NSArray *opQ = [[ZZDownloadUrlConnectionQueue shared] operations];
+    NSInteger runningCount = opQ.count;
+    for (ZZDownloadTaskCFNetworkOperation *op in opQ) {
+        if (op.state == ZZTaskOperationStateFinish) {
+            runningCount -= 1;
+        }
+    }
+    if (runningCount < [[ZZDownloadUrlConnectionQueue shared] maxConcurrentOperationCount]) {
         ZZDownloadTask *task = self.allTaskDict[key];
         if (task && [self taskCanStartDownload:task]) {
             if (![self settingCouldDownload]) {
-                //                task.lastestError = [NSError errorWithDomain:ZZDownloadTaskErrorDomain code:ZZDownloadTaskErrorTypeInterruptError userInfo:@{NSLocalizedDescriptionKey: @"network not in wifi"}];
                 return;
             }
             task.taskArrangeType = ZZDownloadTaskArrangeTypeCFSync;
@@ -561,7 +641,6 @@
             op.completionBlock = ^{
                 self.CFCompleteBlock(task.key);
             };
-            //            [[ZZDownloadUrlConnectionQueue shared] addOperation:op];
             [[ZZDownloadUrlConnectionQueue shared] addOperations:@[op] waitUntilFinished:NO];
             
         }

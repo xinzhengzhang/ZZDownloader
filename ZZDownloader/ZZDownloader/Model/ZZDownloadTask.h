@@ -1,6 +1,6 @@
 //
 //  ZZTask.h
-//  Pods
+//  ZZDownloader
 //
 //  Created by zhangxinzheng on 11/13/14.
 //
@@ -10,7 +10,6 @@
 #import <Mantle/Mantle.h>
 #import "ZZDownloadBaseEntity.h"
 
-#define ZZDownloadValidEntity @[@"SampleEntity"]
 
 @class ZZDownloadBaseEntity;
 
@@ -43,7 +42,8 @@ typedef NS_ENUM(NSUInteger, ZZDownloadTaskErrorType) {
     ZZDownloadTaskErrorTypeHttpError = 444,
     ZZDownloadTaskErrorTypeTransferError,
     ZZDownloadTaskErrorTypeIOError,
-    ZZDownloadTaskErrorTypeInterruptError
+    ZZDownloadTaskErrorTypeInterruptError,
+    ZZDownloadTaskErrorTypeIOFullError
 };
 
 typedef NS_ENUM(NSUInteger, ZZDownloadTaskArrangeType) {
@@ -78,12 +78,14 @@ typedef NS_ENUM(NSUInteger, ZZDownloadTaskArrangeType) {
 - (ZZDownloadBaseEntity *)recoverEntity;
 
 - (ZZDownloadTask *)deepCopy;
-#if BILITEST==1
-- (void)writeLog:(NSString *)log;
-#endif
 // used for task info
 
 @property (nonatomic) int32_t triedCount;
+
+- (long long)getTotalLength;
+- (long long)getDownloadedLength;
+- (float)getProgress;
+- (NSArray *)getSectionsContentTimes;
 
 @property (atomic) NSMutableArray *sectionsLengthList;
 @property (atomic) NSMutableArray *sectionsDownloadedList;

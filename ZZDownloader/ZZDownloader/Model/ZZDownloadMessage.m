@@ -1,6 +1,6 @@
 //
 //  ZZDownloadMessage.m
-//  Pods
+//  ZZDownloader
 //
 //  Created by zhangxinzheng on 11/13/14.
 //

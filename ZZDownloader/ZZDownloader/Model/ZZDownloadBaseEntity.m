@@ -1,6 +1,6 @@
 //
 //  ZZDownloadBaseEntity.m
-//  Pods
+//  ZZDownloader
 //
 //  Created by zhangxinzheng on 11/14/14.
 //

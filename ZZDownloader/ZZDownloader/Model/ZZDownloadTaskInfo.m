@@ -1,6 +1,6 @@
 //
 //  ZZDownloadTaskInfo.m
-//  Pods
+//  ZZDownloader
 //
 //  Created by zhangxinzheng on 11/20/14.
 //
@@ -81,20 +81,17 @@
 - (ZZDownloadBaseEntity *)recoverEntity
 {
     NSString *type = self.entityType;
-    if ([ZZDownloadValidEntity containsObject:type]) {
-        Class class = NSClassFromString(type);
-        ZZDownloadBaseEntity *entity = [[class alloc] init];
-        NSArray *argkeys = [class argvKeys];
-        [argkeys enumerateObjectsUsingBlock:^(id key, NSUInteger index, BOOL *stop) {
-            void *flag = (void *)[class argvKeysFlags][index];
-            id value = objc_getAssociatedObject(self, flag);
-            if (value) {
-                [entity setValue:value forKey:key];
-            }
-        }];
-        return entity;
-    }
-    return nil;
+    Class class = NSClassFromString(type);
+    ZZDownloadBaseEntity *entity = [[class alloc] init];
+    NSArray *argkeys = [class argvKeys];
+    [argkeys enumerateObjectsUsingBlock:^(id key, NSUInteger index, BOOL *stop) {
+        void *flag = (void *)[class argvKeysFlags][index];
+        id value = objc_getAssociatedObject(self, flag);
+        if (value) {
+            [entity setValue:value forKey:key];
+        }
+    }];
+    return entity;
 }
 
 - (NSString *)getUILabelText
