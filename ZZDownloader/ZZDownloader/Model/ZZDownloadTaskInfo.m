@@ -127,11 +127,7 @@
     if (self.command == ZZDownloadAssignedCommandStart) {
         if (self.state == ZZDownloadStateWaiting || self.state == ZZDownloadStateNothing) {
             return [NSString stringWithFormat:@"等待中: %@/%@MB",dString, tString];
-        } else if (self.state == ZZDownloadStateDownloadingDanmaku) {
-            return @"缓存弹幕中";
-        } else if (self.state == ZZDownloadStateDownloadingCover) {
-            return @"缓存封面中";
-        }  else if (self.state == ZZDownloadStateParsing) {
+        } else if (self.state == ZZDownloadStateParsing) {
             return @"地址解析中...";
         } else if (self.state == ZZDownloadStateFail) {
             return @"下载失败等待重新开始";
@@ -156,10 +152,6 @@
             return [NSString stringWithFormat:@"等待中: %@/%@MB",dString, tString];
         } else if (self.state == ZZDownloadStateDownloading) {
             return [NSString stringWithFormat:@"缓存中: %@/%@MB",dString, tString];
-        } else if (self.state == ZZDownloadStateDownloadingDanmaku) {
-            return @"缓存弹幕中";
-        } else if (self.state == ZZDownloadStateDownloadingCover) {
-            return @"缓存封面中";
         } else if (self.state ==ZZDownloadStateDownloaded) {
             return [NSString stringWithFormat:@"缓存完成：%@MB",tString];
         } else if (self.state == ZZDownloadStateInvalid) {
@@ -193,7 +185,7 @@
     if (self.command == ZZDownloadAssignedCommandNone) {
         if (self.state == ZZDownloadStateNothing || self.state == ZZDownloadStateRealPaused || self.state == ZZDownloadStateInterrputPaused || self.state == ZZDownloadStateInvalid) {
             return 1;
-        } else if (self.state == ZZDownloadStateWaiting || self.state == ZZDownloadStateDownloading || self.state == ZZDownloadStateDownloadingDanmaku || self.state == ZZDownloadStateDownloadingCover || self.state == ZZDownloadStateParsing || self.state == ZZDownloadStateFail) {
+        } else if (self.state == ZZDownloadStateWaiting || self.state == ZZDownloadStateDownloading || self.state == ZZDownloadStateParsing || self.state == ZZDownloadStateFail) {
             return 2;
         } else if (self.state == ZZDownloadStateDownloaded) {
             return 3;

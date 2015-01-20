@@ -63,18 +63,9 @@ static NSRecursiveLock *cacheLock;
     return self.cid;
 }
 
-- (void)downloadCoverWithDownloadStartBlock:(void (^)(void))block
-{
-    return;
-}
-
-- (NSString *)getCoverPath
-{
-    return @"";
-}
-
 - (BOOL)updateSelf
 {
+    // do sth to update self
     return YES;
 }
 
@@ -85,6 +76,7 @@ static NSRecursiveLock *cacheLock;
 
 - (BOOL)isValid:(ZZDownloadTask *)task
 {
+    // do sth to check self is valid
     return YES;
 }
 
@@ -120,16 +112,6 @@ static NSRecursiveLock *cacheLock;
 {
     return 0;
 }
-
-- (void)downloadDanmakuWithDownloadStartBlock:(void (^)(void))block
-{
-}
-
-- (NSString *)getDanmakuPath
-{
-    return [[ZZDownloadTaskManagerV2 downloadFolder] stringByAppendingPathComponent:[[self destinationDirPath] stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.danmaku", self.entityKey]]];
-}
-
 
 - (NSString *)destinationRootDirPath
 {

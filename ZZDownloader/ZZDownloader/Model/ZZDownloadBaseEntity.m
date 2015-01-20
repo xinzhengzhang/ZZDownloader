@@ -107,23 +107,6 @@
     return @"";
 }
 
-- (void)downloadDanmakuWithDownloadStartBlock:(void (^)(void))block
-{
-    NSAssert(nil, @"sub class has not implement ZZDownloadBaseEntity");
-}
-
-- (NSString *)getDanmakuPath
-{
-    NSAssert(nil, @"sub class has not implement ZZDownloadBaseEntity");
-    return @"";
-}
-
-- (NSString *)getCoverPath
-{
-    NSAssert(nil, @"sub class has not implement ZZDownloadBaseEntity");
-    return @"";
-}
-
 - (int32_t)getSectionCount
 {
     return 0;

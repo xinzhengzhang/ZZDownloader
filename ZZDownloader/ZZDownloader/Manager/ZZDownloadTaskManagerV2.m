@@ -247,7 +247,7 @@
         if (rtask.key) {
             self.allTaskDict[rtask.key] = rtask;
             [self dealBgCache:rtask];
-            if (rtask.state == ZZDownloadStateDownloading || rtask.state == ZZDownloadStateParsing || rtask.state == ZZDownloadStateDownloadingCover || rtask.state == ZZDownloadStateDownloadingDanmaku || rtask.state == ZZDownloadStateWaiting) {
+            if (rtask.state == ZZDownloadStateDownloading || rtask.state == ZZDownloadStateParsing || rtask.state == ZZDownloadStateWaiting) {
                 rtask.state = ZZDownloadStateNothing;
                 rtask.command = ZZDownloadAssignedCommandStart;
             }

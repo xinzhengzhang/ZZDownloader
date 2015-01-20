@@ -23,8 +23,6 @@ typedef NS_ENUM(NSUInteger, ZZDownloadState) {
     ZZDownloadStateFail,
     ZZDownloadStateInvalid,
     ZZDownloadStateRemoved,
-    ZZDownloadStateDownloadingDanmaku,
-    ZZDownloadStateDownloadingCover,
     ZZDownloadStateParsing
 };
 

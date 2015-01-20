@@ -24,7 +24,10 @@
                 NSMutableURLRequest *mutableURLRequest = [self.request mutableCopy];
                 NSString *requestRange = [NSString stringWithFormat:@"bytes=%d-", 0];
                 [mutableURLRequest setValue:requestRange forHTTPHeaderField:@"Range"];
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundeclared-selector"
                 [self performSelector:@selector(setRequest:) withObject:mutableURLRequest];
+#pragma clang diagnostic pop
             }
         }
     }

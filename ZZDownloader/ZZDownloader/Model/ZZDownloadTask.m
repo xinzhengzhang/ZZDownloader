@@ -151,12 +151,12 @@ NSString * const ZZDownloadTaskErrorDomain = @"ZZDownloadTaskErrorDomain";
     return t;
 }
 
-- (CGFloat)getProgress
+- (float)getProgress
 {
     if (self.state == ZZDownloadStateDownloaded) {
         return 1.0f;
     }
-    CGFloat x = [self getDownloadedLength] * 1.0 / ([self getTotalLength] ?: 1);
+    float x = [self getDownloadedLength] * 1.0 / ([self getTotalLength] ?: 1);
     return x >= 1.0f ? 0.99 : x;
 }
 
@@ -182,7 +182,7 @@ NSString * const ZZDownloadTaskErrorDomain = @"ZZDownloadTaskErrorDomain";
 - (void)pauseWithPauseSuccessBlock:(void (^)(void))block ukeru:(BOOL)ukeru
 {
     if (self.command != ZZDownloadAssignedCommandPause && self.command != ZZDownloadAssignedCommandRemove) {
-        if (self.state == ZZDownloadStateWaiting || self.state == ZZDownloadStateDownloading || self.state == ZZDownloadStateNothing || self.state == ZZDownloadStateParsing || self.state == ZZDownloadStateDownloadingCover || self.state == ZZDownloadStateDownloadingDanmaku || self.state == ZZDownloadStateFail) {
+        if (self.state == ZZDownloadStateWaiting || self.state == ZZDownloadStateNothing || self.state == ZZDownloadStateParsing || self.state == ZZDownloadStateFail) {
             if (ukeru) {
                 self.command = ZZDownloadAssignedCommandInterruptPaused;
             } else {

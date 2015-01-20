@@ -86,7 +86,6 @@ NSString * const ZZDownloadTaskGroupNotifyUiNotification = @"ZZDownloadTaskGroup
     }
     
     group.title = entity.aggregationTitle;
-    group.coverUrl = [entity getCoverPath];
     group.key = [entity aggregationKey];
     group.realKey = [entity realKey];
     group.state = ZZDownloadTaskGroupStateWaiting;
@@ -101,7 +100,7 @@ NSString * const ZZDownloadTaskGroupNotifyUiNotification = @"ZZDownloadTaskGroup
             downloadedcount += 1;
         } else if (info.state == ZZDownloadStateDownloading) {
             runningcount += 1;
-        } else if (taskInfo.state == ZZDownloadStateParsing || taskInfo.state == ZZDownloadStateDownloadingCover || taskInfo.state == ZZDownloadStateDownloadingDanmaku || taskInfo.state == ZZDownloadStateWaiting || taskInfo.state == ZZDownloadStateFail) {
+        } else if (taskInfo.state == ZZDownloadStateParsing || taskInfo.state == ZZDownloadStateWaiting || taskInfo.state == ZZDownloadStateFail) {
             waitingCount += 1;
         }
     }];

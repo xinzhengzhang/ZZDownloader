@@ -46,16 +46,6 @@
 
 - (void)application:(UIApplication *)application handleEventsForBackgroundURLSession:(NSString *)identifier completionHandler:(void (^)())completionHandler
 {
-    NSDate * currentDate = [NSDate dateWithTimeIntervalSinceNow:0];
-    NSDateFormatter * df = [[NSDateFormatter alloc] init ];
-    [df setDateFormat:@"yyyy年MM月dd日 HH小时mm分ss秒"];
-    NSString * na = [df stringFromDate:currentDate];
-    
-    NSString *rootDir = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES)[0];
-    NSString *LogDir = [rootDir stringByAppendingPathComponent:@"sample.log"];
-   
-    [na writeToFile:LogDir atomically:YES encoding:NSUTF8StringEncoding error:nil];
-    
     [ZZDownloadBackgroundSessionManager shared];
     [[ZZDownloadTaskManagerV2 shared] checkSelfUnSecheduledWorkKey:nil block:^(id x) {
         completionHandler();

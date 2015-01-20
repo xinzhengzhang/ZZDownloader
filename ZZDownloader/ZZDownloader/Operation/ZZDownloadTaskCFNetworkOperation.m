@@ -166,12 +166,6 @@
             self.downloadTask.argv = [MTLJSONAdapter JSONDictionaryFromModel:entity];
         }];
         [self.delegate notifyUpdate:entity.entityKey];
-        [entity downloadDanmakuWithDownloadStartBlock:^{
-            self.downloadTask.state = ZZDownloadStateDownloadingDanmaku;
-        }];
-        [entity downloadCoverWithDownloadStartBlock:^{
-            self.downloadTask.state = ZZDownloadStateDownloadingCover;
-        }];
         
         self.downloadTask.state = ts;
         
