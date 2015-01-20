@@ -87,7 +87,7 @@ static NSRecursiveLock *cacheLock;
 
 - (NSString *)getSectionUrlWithCount:(NSInteger)index
 {
-    NSString *query = [NSString stringWithFormat:@"http://interface.bilibili.com/playurl?platform=android&cid=%@&quality=1&otype=json&appkey=c1b107428d337928",self.cid];
+    NSString *query = [NSString stringWithFormat:@"http://api.tv.sohu.com/v4/video/info/%@.json?aid=%@&site=0&api_key=9854b2afa779e1a6bff1962447a09dbd&plat=6&sver=4.0.2&partner=2",self.cid, self.cid];
     NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:query]];
     NSError *error;
     NSData *response = [NSURLConnection sendSynchronousRequest:request returningResponse:nil error:&error];
@@ -98,11 +98,11 @@ static NSRecursiveLock *cacheLock;
     if (error) {
         return @"";
     }
-    NSArray *arr = j[@"durl"];
-    if ([arr isKindOfClass:[NSArray class]] && arr.count) {
-        NSDictionary *s1 = arr[0];
-        if ([s1 isKindOfClass:[NSDictionary class]] && [s1[@"url"] length]) {
-            return s1[@"url"];
+    NSDictionary *dict = j[@"data"];
+    if ([dict isKindOfClass:[NSDictionary class]]) {
+        NSString *s1 = dict[@"download_url"];
+        if ([s1 isKindOfClass:[NSString class]] && s1.length) {
+            return s1;
         }
     }
     return @"";

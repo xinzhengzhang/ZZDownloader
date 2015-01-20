@@ -32,7 +32,6 @@
         operation.key = [entity entityKey];
         
         [[ZZDownloadTaskManagerV2 shared] addOp:operation withEntity:entity block:nil];
-
     }
    
     //ensure all the task assigned by font task was built
