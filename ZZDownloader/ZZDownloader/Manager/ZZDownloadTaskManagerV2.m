@@ -129,7 +129,7 @@
 
 {
     ZZDownloadOperation *operation = [[ZZDownloadOperation alloc] init];
-    operation.command  = ZZDownloadCommandCheckSelfUnSecheduledTask;
+    operation.command  = ZZDownloadCommandStartCache;
     operation.key = key;
     
     [self addOp:operation withEntity:nil block:block];
@@ -182,7 +182,7 @@
         [[ZZDownloadTaskGroupManager shared] checkAllTaskGroupWithCompletationBlock:block];;
         return;
     }
-    if (operation.command == ZZDownloadCommandCheckSelfUnSecheduledTask) {
+    if (operation.command == ZZDownloadCommandStartCache) {
         [self executeBackgroundTaskByWeightDefaultKey:operation.key block:^(NSNumber *number){
             if (block) {
                 dispatch_async(dispatch_get_main_queue(), ^{

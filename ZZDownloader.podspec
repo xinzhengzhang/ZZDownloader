@@ -3,7 +3,7 @@ Pod::Spec.new do |s|
   s.version        = '0.0.1'
   s.summary        = "ZZDownloader"
   s.homepage       = "https://github.com/xinzhengzhang/ZZDownloader"
-  s.source         = { :git => "https://github.com/xinzhengzhang/ZZDownloader.git", :tag => "0.1.0"}
+  s.source         = { :git => "https://github.com/xinzhengzhang/ZZDownloader.git", :tag => "0.2.0"}
   s.author         = { 'zxz' => 'zhangxzheng@gmail.com' }
   s.ios.deployment_target = '6.0'
   s.requires_arc   = true
