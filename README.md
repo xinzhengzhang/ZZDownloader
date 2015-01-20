@@ -2,17 +2,17 @@ ZZDownloader
 ============
 
 #### Usage
-* implement subclass inherit the base class `ZZDownloadBaseEntity` and implement `ZZDownloadParserProtocol` method
+* implement subclass inherit the base class `ZZDownloadBaseEntity` and implement `ZZDownloadParserProtocol`
 * implement subclass inherit the base class `ZZDownloadTaskGroup`
 
 ```objective-c
 SampleEntity *entity = [SampleEntity new];
-        entity.cid = cid;       
-        ZZDownloadOperation *operation = [[ZZDownloadOperation alloc] init];
-        operation.command = ZZDownloadCommandStart;
-        operation.key = [entity entityKey];
+entity.cid = cid;       
+ZZDownloadOperation *operation = [[ZZDownloadOperation alloc] init];
+operation.command = ZZDownloadCommandStart;
+operation.key = [entity entityKey];
         
-        [[ZZDownloadTaskManagerV2 shared] addOp:operation withEntity:entity block:nil];
+[[ZZDownloadTaskManagerV2 shared] addOp:operation withEntity:entity block:nil];
 ```
 #### Operation
 | Operation              |  Description          |
@@ -52,4 +52,4 @@ SampleEntity *entity = [SampleEntity new];
 - ZZDownloadTask
 	* serializable data saved to disk
 - ZZDownloadTaskInfo
-	* task info affixed with notification
+	* task info affixed into notification
