@@ -53,3 +53,9 @@ operation.key = [entity entityKey];
 	* serializable data saved to disk
 - ZZDownloadTaskInfo
 	* task info affixed into notification
+	
+#### Installation
+```bash
+cd ZZDownloaderSample
+pod install
+```
